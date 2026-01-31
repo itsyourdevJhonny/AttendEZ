@@ -1,6 +1,5 @@
 package com.project.attendez
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.project.attendez.data.local.dao.AttendeeDao
 import com.project.attendez.data.local.entity.AttendeeEntity

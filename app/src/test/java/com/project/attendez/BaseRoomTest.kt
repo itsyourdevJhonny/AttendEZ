@@ -7,7 +7,6 @@ import com.project.attendez.di.AttendEzDatabase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Before
-import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
 abstract class BaseRoomTest {
