@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +38,10 @@ class EventViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun getEventById(id: Long): Flow<EventEntity> {
+        return repository.getEventById(id)
     }
 
     fun createEvent(name: String, date: LocalDate, description: String) {

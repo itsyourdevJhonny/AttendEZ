@@ -16,6 +16,9 @@ interface EventDao {
     @Query("SELECT * FROM events ORDER BY date DESC")
     fun getAll(): Flow<List<EventEntity>>
 
+    @Query("SELECT * FROM events WHERE id = :id")
+    fun getById(id: Long): Flow<EventEntity>
+
     @Delete
     suspend fun delete(event: EventEntity)
 }

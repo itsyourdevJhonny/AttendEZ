@@ -6,10 +6,14 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class AttendeeRepository @Inject constructor(
-    private val dao: AttendeeDao
+    private val attendeeDao: AttendeeDao
 ) {
 
-    fun getAttendees(): Flow<List<AttendeeEntity>> = dao.getAll()
+    fun getAttendees(): Flow<List<AttendeeEntity>> = attendeeDao.getAll()
 
-    suspend fun add(attendee: AttendeeEntity): Long = dao.insert(attendee)
+    fun getAttendeeById(id: Long): Flow<AttendeeEntity> = attendeeDao.getById(id)
+
+    fun getAttendeeByStudentId(studentId: String) = attendeeDao.getByStudentId(studentId)
+
+    suspend fun add(attendee: AttendeeEntity): Long = attendeeDao.insert(attendee)
 }

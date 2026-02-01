@@ -65,7 +65,10 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAttendanceRepository(attendanceDao: AttendanceDao): AttendanceRepository {
-        return AttendanceRepository(attendanceDao)
+    fun provideAttendanceRepository(
+        attendanceDao: AttendanceDao,
+        attendeeDao: AttendeeDao
+    ): AttendanceRepository {
+        return AttendanceRepository(attendanceDao, attendeeDao)
     }
 }

@@ -19,7 +19,7 @@ import com.project.attendez.ui.screens.event.EventHeader
 import com.project.attendez.viewmodel.EventViewModel
 
 @Composable
-fun EventScreen(onEventClick: () -> Unit) {
+fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     var showDialog by remember { mutableStateOf(false) }
 
@@ -29,7 +29,7 @@ fun EventScreen(onEventClick: () -> Unit) {
             modifier = Modifier.padding(top = 38.dp),
             topBar = { EventHeader() }
         ) { paddingValues ->
-            EventContent(paddingValues, eventViewModel, onEventClick) { showDialog = it }
+            EventContent(paddingValues, eventViewModel, onEventClick, onHistory) { showDialog = it }
         }
 
         AnimatedVisibility(visible = showDialog) {

@@ -1,6 +1,7 @@
 package com.project.attendez.ui.screens.event
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,17 +23,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +55,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.ui.theme.BackgroundGradient
@@ -63,19 +71,24 @@ import java.time.LocalDate
 fun EventContent(
     paddingValues: PaddingValues,
     eventViewModel: EventViewModel,
-    onEventClick: () -> Unit,
-    onShowCreateDialog: (Boolean) -> Unit
+    onEventClick: (Long) -> Unit,
+    onHistory: () -> Unit,
+    onShowCreateDialog: (Boolean) -> Unit,
 ) {
     val events by eventViewModel.events.collectAsState()
     val isLoading by eventViewModel.isLoading.collectAsState()
 
     val today = LocalDate.now()
-    val ongoingEvents = events.filter { it.date >= today }
+    val ongoingEvents = events.filter { it.date >= today }.sortedByDescending { it.createdAt }
     val pastEvents = events.filter { it.date < today }
 
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showDeleteSheet by remember { mutableStateOf(false) }
     var selectedEvent by remember { mutableStateOf<EventEntity?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredEvents = (if (selectedTabIndex == 0) ongoingEvents else pastEvents)
+        .filter { it.name.contains(searchQuery, ignoreCase = true) }
 
     Column(
         modifier = Modifier
@@ -94,7 +107,7 @@ fun EventContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Actions(onShowCreateDialog)
+            Actions(onShowCreateDialog, onHistory)
 
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -112,7 +125,13 @@ fun EventContent(
             LabelIndicator(
                 selectedTabIndex = selectedTabIndex,
                 totalOngoing = ongoingEvents.size,
-                totalPast = pastEvents.size
+                totalPast = pastEvents.size,
+                searchQuery = searchQuery,
+                filteredEvents = filteredEvents,
+                onSearchQueryChange = { searchQuery = it },
+                onEventClick = onEventClick,
+                onEventSelected = { selectedEvent = it },
+                onDelete = { showDeleteSheet = true }
             )
 
             when {
@@ -135,10 +154,7 @@ fun EventContent(
                             .padding(horizontal = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(
-                            items = if (selectedTabIndex == 0) ongoingEvents else pastEvents,
-                            key = { it.id }
-                        ) { event ->
+                        items(items = filteredEvents, key = { it.id }) { event ->
                             EventItem(event, onEventClick) {
                                 selectedEvent = event
                                 showDeleteSheet = true
@@ -156,7 +172,7 @@ fun EventContent(
 }
 
 @Composable
-private fun Actions(onShowCreateDialog: (Boolean) -> Unit) {
+private fun Actions(onShowCreateDialog: (Boolean) -> Unit, onHistory: () -> Unit) {
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = Modifier.fillMaxWidth()
@@ -172,7 +188,7 @@ private fun Actions(onShowCreateDialog: (Boolean) -> Unit) {
                     if (label == "Create") {
                         onShowCreateDialog(true)
                     } else {
-                        //
+                        onHistory()
                     }
                 }
             )
@@ -218,9 +234,11 @@ fun DeleteEventSheet(
 }
 
 @Composable
-private fun EmptyAttendance() {
+fun EmptyAttendance(label: String = "There are no attendance available at this time.") {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -234,15 +252,29 @@ private fun EmptyAttendance() {
             )
 
             Text(
-                text = "There are no attendance available at this time.",
+                text = label,
                 textAlign = TextAlign.Center
             )
         }
     }
 }
 
+
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
-private fun LabelIndicator(selectedTabIndex: Int, totalOngoing: Int, totalPast: Int) {
+private fun LabelIndicator(
+    selectedTabIndex: Int,
+    totalOngoing: Int,
+    totalPast: Int,
+    filteredEvents: List<EventEntity>,
+    onSearchQueryChange: (String) -> Unit,
+    searchQuery: String,
+    onEventClick: (Long) -> Unit,
+    onEventSelected: (EventEntity) -> Unit,
+    onDelete: () -> Unit
+) {
+    var isSearching by remember { mutableStateOf(false) }
+
     val prefix = if (selectedTabIndex == 0) "Ongoing" else "Past"
     val count = if (selectedTabIndex == 0) totalOngoing else totalPast
 
@@ -253,13 +285,102 @@ private fun LabelIndicator(selectedTabIndex: Int, totalOngoing: Int, totalPast: 
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        Text(text = "$prefix Event${if (count > 1) "s" else ""} ($count)", color = Color.Black)
-
-        Icon(
-            imageVector = Icons.Default.Search,
-            contentDescription = "Search",
-            modifier = Modifier.drawGradient()
+        Text(
+            text = "$prefix Event${if (count != 1) "s" else ""} ($count)",
+            color = Color.Black
         )
+
+        IconButton(onClick = { isSearching = true }) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                modifier = Modifier.drawGradient()
+            )
+        }
+    }
+
+    if (isSearching) {
+        SearchEventDialog(
+            searchQuery,
+            onSearchQueryChange,
+            filteredEvents,
+            onSearching = { isSearching = it },
+            onEventClick,
+            onEventSelected,
+            onDelete
+        )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SearchEventDialog(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    filteredEvents: List<EventEntity>,
+    onSearching: (Boolean) -> Unit,
+    onEventClick: (Long) -> Unit,
+    onEventSelected: (EventEntity) -> Unit,
+    onDelete: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = { onSearching(false) },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Search Event") },
+                    navigationIcon = {
+                        IconButton(onClick = { onSearching(false) }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { onSearchQueryChange(it) },
+                    placeholder = { Text("Search events...") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.drawGradient()
+                        )
+                    },
+                    singleLine = true,
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(items = filteredEvents, key = { it.id }) { event ->
+                        EventItem(event, onEventClick) {
+                            onEventSelected(event)
+                            onDelete()
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -323,11 +444,15 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
 }
 
 @Composable
-fun LazyItemScope.EventItem(event: EventEntity, onEventClick: () -> Unit, onDelete: () -> Unit) {
+fun LazyItemScope.EventItem(
+    event: EventEntity,
+    onEventClick: (Long) -> Unit,
+    onDelete: () -> Unit
+) {
     Row(
         modifier = Modifier
-            .combinedClickable(onClick = onEventClick, onLongClick = onDelete)
-            .background(BlueSecondary.copy(alpha = 0.3f), CircleShape)
+            .combinedClickable(onClick = { onEventClick(event.id) }, onLongClick = onDelete)
+            .background(BlueSecondary.copy(alpha = 0.5f), CircleShape)
             .fillMaxWidth()
             .padding(8.dp)
             .animateItem(),

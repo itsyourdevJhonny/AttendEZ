@@ -1,10 +1,13 @@
 package com.project.attendez.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.data.local.util.AttendanceSummary
 import kotlinx.coroutines.flow.Flow
 
@@ -17,13 +20,43 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance WHERE eventId = :eventId")
     fun getByEvent(eventId: Long): Flow<List<AttendanceEntity>>
 
-    @Query("""
+    @Query("SELECT * FROM attendance WHERE eventId = :eventId AND attendeeId = :attendeeId")
+    fun getByEventAndAttendee(eventId: Long, attendeeId: Long): Flow<AttendanceEntity>
+
+    @Query(
+        """
         SELECT
             SUM(CASE WHEN isPresent = 1 THEN 1 ELSE 0 END) AS presentCount,
             SUM(CASE WHEN isPresent = 0 THEN 1 ELSE 0 END) AS absentCount
         FROM attendance
         WHERE eventId = :eventId
-    """)
+    """
+    )
     fun getSummary(eventId: Long): Flow<AttendanceSummary>
+
+    @Query(
+        """
+        DELETE FROM attendance 
+        WHERE eventId = :eventId AND attendeeId = :attendeeId
+        """
+    )
+    suspend fun delete(eventId: Long, attendeeId: Long)
+
+    @Query(
+        """
+        SELECT 
+            e.id AS eventId,
+            e.name AS eventName,
+            e.date AS date,
+            COUNT(a.attendeeId) AS total,
+            SUM(CASE WHEN a.isPresent = 1 THEN 1 ELSE 0 END) AS present,
+            SUM(CASE WHEN a.isPresent = 0 THEN 1 ELSE 0 END) AS absent
+        FROM attendance a
+        INNER JOIN events e ON a.eventId = e.id
+        GROUP BY e.id
+        ORDER BY e.date DESC
+        """
+    )
+    suspend fun getAttendanceHistory(): List<com.project.attendez.viewmodel.AttendanceSummary>
 }
 

@@ -15,11 +15,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.project.attendez.ui.screens.AttendanceScreen
 import com.project.attendez.ui.screens.AttendeeScreen
 import com.project.attendez.ui.screens.EventScreen
+import com.project.attendez.ui.screens.HistoryScreen
 import com.project.attendez.ui.theme.AttendEZTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -59,17 +63,40 @@ fun AppNavigation() {
         }
     ) {
         composable("event") {
-            EventScreen(onEventClick = { navController.navigate("attendee") })
+            EventScreen(
+                onEventClick = { eventId -> navController.navigate("attendee/$eventId") },
+                onHistory = { navController.navigate("history") }
+            )
         }
 
-        composable("attendee") {
+        composable(
+            route = "attendee/{eventId}",
+            arguments = listOf(navArgument("eventId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
+
             AttendeeScreen(
+                eventId,
+                onAttendance = { eventId, attendeeId -> navController.navigate("attendance/$eventId/$attendeeId") },
                 onBack = { navController.popBackStack() }
             )
         }
 
-        composable("attendance") {
+        composable(
+            route = "attendance/{eventId}/{attendeeId}",
+            arguments = listOf(
+                navArgument("eventId") { type = NavType.LongType },
+                navArgument("attendeeId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
+            val attendeeId = backStackEntry.arguments?.getLong("attendeeId") ?: 0L
 
+            AttendanceScreen(eventId, attendeeId, onBack = { navController.popBackStack() })
+        }
+
+        composable("history") {
+            HistoryScreen { navController.popBackStack() }
         }
     }
 }
