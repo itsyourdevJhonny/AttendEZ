@@ -67,19 +67,23 @@ import com.project.attendez.viewmodel.EventViewModel
 fun AttendeeScreen(eventId: Long, onAttendance: (Long, Long) -> Unit, onBack: () -> Unit) {
     Scaffold(
         containerColor = BlueSecondary.copy(alpha = 0.3f),
-        topBar = {
-            TopAppBar(
-                title = { Text("Manage Event/Attendee") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
-            )
-        }
+        topBar = { Header(onBack) }
     ) { paddingValues ->
         AttendeeContent(paddingValues, eventId, onAttendance)
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Header(onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text("Manage Attendee") },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+            }
+        }
+    )
 }
 
 @Composable
