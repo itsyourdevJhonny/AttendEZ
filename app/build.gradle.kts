@@ -63,15 +63,16 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // room testing
+    // Room Testing
     testImplementation(libs.androidx.room.testing)
 
-    // coroutine testing
+    // Coroutine Testing
     testImplementation(libs.kotlinx.coroutines.test)
 
-    // truth (better assertions)
+    // Truth
     testImplementation(libs.truth)
 
+    // Robolectric
     testImplementation(libs.robolectric)
 
     // Room

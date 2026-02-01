@@ -8,7 +8,6 @@ import javax.inject.Inject
 class EventRepository @Inject constructor(
     private val dao: EventDao
 ) {
-
     fun getEvents(): Flow<List<EventEntity>> = dao.getAll()
 
     fun getEventById(id: Long): Flow<EventEntity> = dao.getById(id)

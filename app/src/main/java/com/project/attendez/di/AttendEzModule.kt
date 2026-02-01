@@ -35,40 +35,28 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideEventDao(database: AttendEzDatabase): EventDao {
-        return database.eventDao()
-    }
+    fun provideEventDao(database: AttendEzDatabase) = database.eventDao()
 
     @Provides
     @Singleton
-    fun provideAttendeeDao(database: AttendEzDatabase): AttendeeDao {
-        return database.attendeeDao()
-    }
+    fun provideAttendeeDao(database: AttendEzDatabase) = database.attendeeDao()
 
     @Provides
     @Singleton
-    fun provideAttendanceDao(database: AttendEzDatabase): AttendanceDao {
-        return database.attendanceDao()
-    }
+    fun provideAttendanceDao(database: AttendEzDatabase) = database.attendanceDao()
 
     @Provides
     @Singleton
-    fun provideEventRepository(eventDao: EventDao): EventRepository {
-        return EventRepository(eventDao)
-    }
+    fun provideEventRepository(eventDao: EventDao) = EventRepository(eventDao)
 
     @Provides
     @Singleton
-    fun provideAttendeeRepository(attendeeDao: AttendeeDao): AttendeeRepository {
-        return AttendeeRepository(attendeeDao)
-    }
+    fun provideAttendeeRepository(attendeeDao: AttendeeDao) = AttendeeRepository(attendeeDao)
 
     @Provides
     @Singleton
     fun provideAttendanceRepository(
         attendanceDao: AttendanceDao,
         attendeeDao: AttendeeDao
-    ): AttendanceRepository {
-        return AttendanceRepository(attendanceDao, attendeeDao)
-    }
+    ) = AttendanceRepository(attendanceDao, attendeeDao)
 }

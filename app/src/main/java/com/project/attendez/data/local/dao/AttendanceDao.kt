@@ -5,7 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.project.attendez.data.local.entity.AttendanceEntity
-import com.project.attendez.data.local.util.AttendanceSummary
+import com.project.attendez.data.local.util.AttendanceCount
+import com.project.attendez.data.local.util.Summary
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,7 +30,7 @@ interface AttendanceDao {
         WHERE eventId = :eventId
     """
     )
-    fun getSummary(eventId: Long): Flow<AttendanceSummary>
+    fun getSummary(eventId: Long): Flow<AttendanceCount>
 
     @Query(
         """
@@ -54,6 +55,6 @@ interface AttendanceDao {
         ORDER BY e.date DESC
         """
     )
-    suspend fun getAttendanceHistory(): List<com.project.attendez.viewmodel.AttendanceSummary>
+    suspend fun getAttendanceHistory(): List<Summary>
 }
 

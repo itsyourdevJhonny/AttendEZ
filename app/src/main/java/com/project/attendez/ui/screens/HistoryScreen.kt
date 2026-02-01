@@ -29,7 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.ui.screens.history.HistoryCard
-import com.project.attendez.viewmodel.AttendanceSummary
+import com.project.attendez.data.local.util.Summary
 import com.project.attendez.viewmodel.HistoryUiState
 import com.project.attendez.viewmodel.HistoryViewModel
 
@@ -78,7 +78,7 @@ private fun Header(onBack: () -> Unit) {
 }
 
 @Composable
-private fun HistoryList(padding: PaddingValues, records: List<AttendanceSummary>) {
+private fun HistoryList(padding: PaddingValues, records: List<Summary>) {
     if (records.isEmpty()) {
         EmptyHistoryState(padding)
         return

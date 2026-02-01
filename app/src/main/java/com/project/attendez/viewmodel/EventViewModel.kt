@@ -5,12 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
@@ -40,23 +37,17 @@ class EventViewModel @Inject constructor(
         }
     }
 
-    fun getEventById(id: Long): Flow<EventEntity> {
-        return repository.getEventById(id)
-    }
+    fun getEventById(id: Long) = repository.getEventById(id)
 
     fun createEvent(name: String, date: LocalDate, description: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.create(
-                EventEntity(name = name, date = date, description = description)
-            )
+            repository.create(EventEntity(name = name, date = date, description = description))
             _isLoading.value = false
         }
     }
 
     fun deleteEvent(event: EventEntity) {
-        viewModelScope.launch {
-            repository.delete(event)
-        }
+        viewModelScope.launch { repository.delete(event) }
     }
 }

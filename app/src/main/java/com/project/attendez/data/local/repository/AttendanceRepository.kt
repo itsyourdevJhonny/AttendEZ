@@ -5,7 +5,7 @@ import com.project.attendez.data.local.dao.AttendanceDao
 import com.project.attendez.data.local.dao.AttendeeDao
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendeeEntity
-import com.project.attendez.data.local.util.AttendanceSummary
+import com.project.attendez.data.local.util.Summary
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -16,8 +16,6 @@ class AttendanceRepository @Inject constructor(
 
     fun getAttendance(eventId: Long): Flow<List<AttendanceEntity>> =
         attendanceDao.getByEvent(eventId)
-
-    fun getSummary(eventId: Long): Flow<AttendanceSummary> = attendanceDao.getSummary(eventId)
 
     suspend fun mark(eventId: Long, attendeeId: Long, isPresent: Boolean) {
         attendanceDao.mark(
@@ -64,7 +62,7 @@ class AttendanceRepository @Inject constructor(
         return if (existing != null) AddAttendeeResult.Existing else AddAttendeeResult.New
     }
 
-    suspend fun getAttendanceHistory(): List<com.project.attendez.viewmodel.AttendanceSummary> {
+    suspend fun getAttendanceHistory(): List<Summary> {
         return attendanceDao.getAttendanceHistory()
     }
 }

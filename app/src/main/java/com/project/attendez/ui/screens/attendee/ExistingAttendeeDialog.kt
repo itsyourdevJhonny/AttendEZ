@@ -96,7 +96,7 @@ fun ExistingAttendeeDialog(
                         navigationIcon = {
                             IconButton(onClick = onDismiss) {
                                 Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back"
                                 )
                             }

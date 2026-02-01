@@ -1,7 +1,6 @@
 package com.project.attendez.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -23,23 +22,21 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     var showDialog by remember { mutableStateOf(false) }
 
-    Box {
-        Scaffold(
-            containerColor = Color.White,
-            modifier = Modifier.padding(top = 38.dp),
-            topBar = { EventHeader() }
-        ) { paddingValues ->
-            EventContent(paddingValues, eventViewModel, onEventClick, onHistory) { showDialog = it }
-        }
+    Scaffold(
+        containerColor = Color.White,
+        modifier = Modifier.padding(top = 38.dp),
+        topBar = { EventHeader() }
+    ) { paddingValues ->
+        EventContent(paddingValues, eventViewModel, onEventClick, onHistory) { showDialog = it }
+    }
 
-        AnimatedVisibility(visible = showDialog) {
-            CreateEventDialog(
-                onDismiss = { showDialog = false },
-                onCreate = { name, date, description ->
-                    eventViewModel.createEvent(name, date, description)
-                    showDialog = false
-                }
-            )
-        }
+    AnimatedVisibility(visible = showDialog) {
+        CreateEventDialog(
+            onDismiss = { showDialog = false },
+            onCreate = { name, date, description ->
+                eventViewModel.createEvent(name, date, description)
+                showDialog = false
+            }
+        )
     }
 }

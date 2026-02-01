@@ -22,10 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.project.attendez.viewmodel.AttendanceSummary
+import com.project.attendez.data.local.util.Summary
 
 @Composable
-fun HistoryCard(summary: AttendanceSummary) {
+fun HistoryCard(summary: Summary) {
     val presentRatio = if (summary.total == 0) 0f else summary.present.toFloat() / summary.total
 
     Card(
@@ -46,7 +46,7 @@ fun HistoryCard(summary: AttendanceSummary) {
 }
 
 @Composable
-private fun EventInformation(summary: AttendanceSummary) {
+private fun EventInformation(summary: Summary) {
     Column {
         Text(text = summary.eventName, fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Text(
@@ -58,7 +58,7 @@ private fun EventInformation(summary: AttendanceSummary) {
 }
 
 @Composable
-private fun Counts(summary: AttendanceSummary) {
+private fun Counts(summary: Summary) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
