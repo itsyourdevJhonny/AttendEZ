@@ -3,7 +3,6 @@ package com.project.attendez.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.repository.AttendanceRepository
-import com.project.attendez.data.local.util.AttendanceSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +45,6 @@ data class AttendanceSummary(
 
 sealed interface HistoryUiState {
     object Loading : HistoryUiState
-    data class Success(val records: List<com.project.attendez.viewmodel.AttendanceSummary>) : HistoryUiState
+    data class Success(val records: List<AttendanceSummary>) : HistoryUiState
     data class Error(val message: String) : HistoryUiState
 }

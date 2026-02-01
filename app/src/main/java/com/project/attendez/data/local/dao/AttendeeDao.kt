@@ -1,11 +1,9 @@
 package com.project.attendez.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import com.project.attendez.data.local.entity.AttendeeEntity
 import kotlinx.coroutines.flow.Flow
 
