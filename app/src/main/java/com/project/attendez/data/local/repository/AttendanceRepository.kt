@@ -4,8 +4,9 @@ import com.project.attendez.data.local.dao.AttendanceDao
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.util.AttendanceSummary
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
-class AttendanceRepository(
+class AttendanceRepository @Inject constructor(
     private val dao: AttendanceDao
 ) {
 

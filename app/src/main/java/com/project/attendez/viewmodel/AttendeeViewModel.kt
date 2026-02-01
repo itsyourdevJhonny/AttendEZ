@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.data.local.repository.AttendeeRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class AttendeeViewModel(
+@HiltViewModel
+class AttendeeViewModel @Inject constructor(
     private val repository: AttendeeRepository
 ) : ViewModel() {
 

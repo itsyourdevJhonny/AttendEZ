@@ -1,6 +1,7 @@
 package com.project.attendez.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import com.project.attendez.data.local.entity.EventEntity
@@ -14,4 +15,7 @@ interface EventDao {
 
     @Query("SELECT * FROM events ORDER BY date DESC")
     fun getAll(): Flow<List<EventEntity>>
+
+    @Delete
+    suspend fun delete(event: EventEntity)
 }
