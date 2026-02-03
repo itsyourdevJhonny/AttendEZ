@@ -1,4 +1,4 @@
-package com.project.attendez.ui.screens.event
+package com.project.attendez.ui.event
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement

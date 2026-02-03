@@ -1,4 +1,4 @@
-package com.project.attendez.ui.screens.event
+package com.project.attendez.ui.event
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -6,10 +6,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,7 +37,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -45,14 +50,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
-import com.project.attendez.ui.theme.BlueTertiary
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -72,53 +74,53 @@ fun CreateEventDialog(
 
     val isFormValid = name.isNotBlank()
 
-    Dialog(onDismissRequest = onDismiss) {
-        AnimatedVisibility(
-            visible = true,
-            enter = scaleIn() + fadeIn(),
-            exit = scaleOut() + fadeOut()
+    AnimatedVisibility(
+        visible = true,
+        enter = scaleIn() + fadeIn(),
+        exit = scaleOut() + fadeOut(),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
         ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                tonalElevation = 6.dp,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .background(Color.White, RoundedCornerShape(20.dp))
+                    .padding(20.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Header(onDismiss)
+                Header(onDismiss)
 
-                    InputField(
-                        label = "Event name",
-                        singleLine = true,
-                        value = name,
-                        onValueChange = { name = it }
-                    )
+                InputField(
+                    label = "Event name",
+                    singleLine = true,
+                    value = name,
+                    onValueChange = { name = it }
+                )
 
-                    InputField(
-                        label = "Description (optional)",
-                        singleLine = false,
-                        value = description,
-                        onValueChange = { description = it }
-                    )
+                InputField(
+                    label = "Description (optional)",
+                    singleLine = false,
+                    value = description,
+                    onValueChange = { description = it }
+                )
 
 
-                    DatePickerToggleButton(selectedDate) { showDatePicker = true }
+                DatePickerToggleButton(selectedDate) { showDatePicker = true }
 
-                    CreateButton(
-                        onCreate,
-                        name,
-                        selectedDate,
-                        description,
-                        onDismiss,
-                        isFormValid,
-                        isLoading,
-                        onLoading = { isLoading = it }
-                    )
-                }
+                CreateButton(
+                    onCreate,
+                    name,
+                    selectedDate,
+                    description,
+                    onDismiss,
+                    isFormValid,
+                    isLoading,
+                    onLoading = { isLoading = it }
+                )
             }
         }
     }
@@ -138,11 +140,15 @@ private fun Header(onDismiss: () -> Unit) {
         Text(
             text = "Create Attendance",
             style = MaterialTheme.typography.titleLarge.copy(brush = BackgroundGradient),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Black
         )
 
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Close")
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Close",
+                tint = Color.Red
+            )
         }
     }
 }
@@ -160,6 +166,14 @@ private fun InputField(
         label = { Text(text = label) },
         singleLine = singleLine,
         minLines = 3,
+        colors = OutlinedTextFieldDefaults.colors(
+            unfocusedBorderColor = Color.Black,
+            unfocusedLabelColor = Color.Gray,
+            unfocusedTextColor = Color.Black,
+            focusedTextColor = Color.Black,
+            focusedLabelColor = BluePrimary,
+            focusedBorderColor = BluePrimary
+        ),
         modifier = Modifier.fillMaxWidth()
     )
 }
@@ -169,12 +183,12 @@ private fun DatePickerToggleButton(selectedDate: LocalDate?, onClick: () -> Unit
     OutlinedButton(
         onClick = onClick,
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selectedDate != LocalDate.now()) BlueTertiary else Color.Transparent,
-            contentColor = if (selectedDate != LocalDate.now()) Color.White else BlueTertiary
+            containerColor = if (selectedDate != LocalDate.now()) BluePrimary else Color.Transparent,
+            contentColor = if (selectedDate != LocalDate.now()) Color.White else BluePrimary
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = if (selectedDate != LocalDate.now()) Color.Transparent else BlueTertiary
+            color = if (selectedDate != LocalDate.now()) Color.Transparent else BluePrimary
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -203,7 +217,12 @@ private fun CreateButton(
             onDismiss()
         },
         enabled = isFormValid && !isLoading,
-        colors = ButtonDefaults.buttonColors(containerColor = BluePrimary),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = BluePrimary,
+            contentColor = Color.White,
+            disabledContainerColor = Color.Gray,
+            disabledContentColor = Color.DarkGray
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
@@ -211,7 +230,7 @@ private fun CreateButton(
         if (isLoading) {
             CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
         } else {
-            Text(text = "Create", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = "Create", fontSize = 16.sp, fontWeight = FontWeight.Black)
         }
     }
 }
@@ -233,12 +252,56 @@ fun EventDatePickerDialog(onDateSelected: (LocalDate) -> Unit, onDismiss: () -> 
                     }
                     onDismiss()
                 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BluePrimary,
+                    contentColor = Color.White
+                ),
                 content = { Text("OK") }
             )
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-        shape = RectangleShape
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = Color.Black
+                )
+            ) { Text("Cancel") }
+        },
+        colors = DatePickerDefaults.colors(
+            containerColor = Color.White
+        ),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        DatePicker(state = datePickerState)
+        DatePicker(
+            state = datePickerState,
+            title = {
+                Text(
+                    text = "Select Date",
+                    color = Color.Black,
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(
+                        PaddingValues(start = 24.dp, end = 12.dp, top = 16.dp)
+                    )
+                )
+            },
+            colors = DatePickerDefaults.colors(
+                containerColor = Color.White,
+                titleContentColor = Color.Black,
+                headlineContentColor = BluePrimary,
+                weekdayContentColor = Color.Black,
+                subheadContentColor = Color.Black,
+                navigationContentColor = Color.Black,
+                yearContentColor = Color.Black,
+                currentYearContentColor = BluePrimary,
+                selectedYearContentColor = Color.White,
+                selectedYearContainerColor = BluePrimary,
+                dayContentColor = Color.Black,
+                selectedDayContentColor = Color.White,
+                selectedDayContainerColor = BluePrimary,
+                todayContentColor = BluePrimary,
+                todayDateBorderColor = BluePrimary,
+            )
+        )
     }
 }

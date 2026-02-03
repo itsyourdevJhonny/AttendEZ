@@ -22,6 +22,13 @@ interface AttendeeDao {
     @Query("SELECT * FROM attendees WHERE studentId = :studentId")
     fun getByStudentId(studentId: String): Flow<AttendeeEntity?>
 
+    @Query("""
+        SELECT a.* FROM attendees a
+        INNER JOIN attendance att ON a.id = att.attendeeId
+        WHERE att.eventId = :eventId
+    """)
+    fun getByEventId(eventId: Long): Flow<List<AttendeeEntity?>>
+
     @Query("SELECT * FROM attendees WHERE studentId = :studentId")
     suspend fun getByStudentIdOnce(studentId: String): AttendeeEntity?
 }

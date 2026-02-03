@@ -1,4 +1,4 @@
-package com.project.attendez.ui.screens.attendance
+package com.project.attendez.ui.attendance
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.theme.BackgroundGradient
+import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueTertiary
 import com.project.attendez.viewmodel.AttendanceViewModel
 
@@ -81,7 +83,8 @@ private fun ProfileCard(person: AttendeeEntity) {
         Badge(modifier = Modifier.size(56.dp)) {
             Text(
                 text = person.fullName.first().toString(),
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White
             )
         }
 
@@ -89,11 +92,11 @@ private fun ProfileCard(person: AttendeeEntity) {
             Text(
                 text = person.fullName,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondary
+                color = Color.White,
+                fontWeight = FontWeight.Black
             )
 
-            Text(text = "${person.course} • Year ${person.yearLevel}", color = Color.Black)
+            Text(text = "${person.course} • Year ${person.yearLevel}", color = Color.White)
         }
     }
 }
@@ -112,22 +115,28 @@ private fun StatusCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(BlueTertiary)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Attendance Status",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
                 )
 
                 Image(
                     painter = painterResource(if (attendance?.isPresent == true) R.drawable.present else R.drawable.pending),
                     contentDescription = null,
+                    colorFilter = if (attendance?.isPresent == true) null else ColorFilter.tint(
+                        color = Color.Red
+                    ),
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -147,10 +156,10 @@ private fun StatusCard(
                     },
                     label = { Text("Present") },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (attendance?.isPresent == true) BlueTertiary else MaterialTheme.colorScheme.surface,
+                        containerColor = if (attendance?.isPresent == true) BluePrimary else Color.White,
                         labelColor = if (attendance?.isPresent == true) Color.White else Color.Black
                     ),
-                    border = BorderStroke(width = 1.dp, color = BlueTertiary)
+                    border = BorderStroke(width = 1.dp, color = BluePrimary)
                 )
 
                 AssistChip(
@@ -163,8 +172,8 @@ private fun StatusCard(
                     },
                     label = { Text("Absent") },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (attendance?.isPresent == false) Color.Red.copy(alpha = 0.7f)
-                        else MaterialTheme.colorScheme.surface,
+                        containerColor = if (attendance?.isPresent == false) Color.Red
+                        else Color.White,
                         labelColor = if (attendance?.isPresent == false) Color.White else Color.Black
                     ),
                     border = BorderStroke(width = 1.dp, color = Color.Red)
@@ -185,8 +194,8 @@ private fun DeleteButton(onDelete: () -> Unit) {
             contentColor = Color.White
         )
     ) {
-        Icon(imageVector = Icons.Default.Delete, contentDescription = null)
+        Icon(imageVector = Icons.Default.Delete, contentDescription = null, tint = Color.White)
         Spacer(Modifier.width(8.dp))
-        Text("Remove Attendee")
+        Text(text = "Remove Attendee", color = Color.White)
     }
 }

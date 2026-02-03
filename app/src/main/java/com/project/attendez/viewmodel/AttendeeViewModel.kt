@@ -10,4 +10,6 @@ class AttendeeViewModel @Inject constructor(
     private val repository: AttendeeRepository
 ) : ViewModel() {
     fun getAttendeeById(id: Long) = repository.getAttendeeById(id)
+
+    fun getAttendeesByEventId(eventId: Long) = repository.getByEventId(eventId)
 }

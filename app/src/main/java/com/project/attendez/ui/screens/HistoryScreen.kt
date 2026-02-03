@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -20,16 +21,20 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.project.attendez.ui.screens.history.HistoryCard
+import com.project.attendez.ui.history.HistoryCard
 import com.project.attendez.data.local.util.Summary
+import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.viewmodel.HistoryUiState
 import com.project.attendez.viewmodel.HistoryViewModel
 
@@ -44,6 +49,7 @@ fun HistoryScreen(onBack: () -> Unit) {
     }
 
     Scaffold(
+        containerColor = Color.White,
         topBar = { Header(onBack) }
     ) { padding ->
         when (uiState) {
@@ -73,7 +79,13 @@ private fun Header(onBack: () -> Unit) {
             IconButton(onClick = onBack) {
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
             }
-        }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = BluePrimary,
+            titleContentColor = Color.White,
+            navigationIconContentColor = Color.White
+        ),
+        modifier = Modifier.clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
     )
 }
 
@@ -88,8 +100,8 @@ private fun HistoryList(padding: PaddingValues, records: List<Summary>) {
         modifier = Modifier
             .padding(padding)
             .fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(records, key = { it.eventId }) { summary ->
             HistoryCard(summary)

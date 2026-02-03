@@ -12,7 +12,5 @@ class AttendeeRepository @Inject constructor(
 
     fun getAttendeeById(id: Long): Flow<AttendeeEntity> = attendeeDao.getById(id)
 
-    fun getAttendeeByStudentId(studentId: String) = attendeeDao.getByStudentId(studentId)
-
-    suspend fun add(attendee: AttendeeEntity): Long = attendeeDao.insert(attendee)
+    fun getByEventId(eventId: Long) = attendeeDao.getByEventId(eventId)
 }

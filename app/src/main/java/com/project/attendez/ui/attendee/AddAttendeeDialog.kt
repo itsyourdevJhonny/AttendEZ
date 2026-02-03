@@ -1,7 +1,8 @@
-package com.project.attendez.ui.screens.attendee
+package com.project.attendez.ui.attendee
 
 import android.content.Context
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,20 +21,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -49,13 +54,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.R
 import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
+import com.project.attendez.ui.theme.BlueSecondary
 import com.project.attendez.ui.util.drawGradient
 import com.project.attendez.viewmodel.AttendanceViewModel
 
@@ -68,6 +72,7 @@ fun AddAttendeeDialog(eventId: Long, onDismiss: () -> Unit) {
     var fullName by remember { mutableStateOf("") }
     var course by remember { mutableStateOf("") }
     var yearLevel by remember { mutableIntStateOf(0) }
+    var isPresent by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     val isValid by remember {
@@ -76,64 +81,84 @@ fun AddAttendeeDialog(eventId: Long, onDismiss: () -> Unit) {
         }
     }
 
-    Dialog(
-        onDismissRequest = { if (!isLoading) onDismiss() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+    BackHandler { onDismiss() }
+
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn() + scaleIn(initialScale = 0.9f),
+        exit = fadeOut() + scaleOut(targetScale = 0.9f)
     ) {
-        AnimatedVisibility(
-            visible = true,
-            enter = fadeIn() + scaleIn(initialScale = 0.9f),
-            exit = fadeOut() + scaleOut(targetScale = 0.9f)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.45f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f)),
-                contentAlignment = Alignment.Center
+                    .background(Color.White, RoundedCornerShape(24.dp))
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .wrapContentHeight(),
-                    shape = RoundedCornerShape(24.dp),
-                    elevation = CardDefaults.cardElevation(12.dp)
+                Header(onDismiss)
+
+                HorizontalDivider(Modifier.drawGradient())
+
+                InputFields(
+                    studentId,
+                    fullName,
+                    course,
+                    onStudentIdChange = { studentId = it },
+                    onFullNameChange = { fullName = it },
+                    onCourseChange = { course = it }
+                )
+
+                HorizontalDivider(Modifier.drawGradient())
+
+                YearLevel(yearLevel) { yearLevel = it }
+
+                HorizontalDivider(Modifier.drawGradient())
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Header()
+                    Text(
+                        text = "Mark as Present",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
 
-                        HorizontalDivider()
-
-                        InputFields(
-                            studentId,
-                            fullName,
-                            course,
-                            onStudentIdChange = { studentId = it },
-                            onFullNameChange = { fullName = it },
-                            onCourseChange = { course = it }
+                    Switch(
+                        checked = isPresent,
+                        onCheckedChange = { isPresent = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = BluePrimary,
+                            uncheckedThumbColor = BluePrimary,
+                            uncheckedTrackColor = Color.White,
+                            uncheckedBorderColor = BlueSecondary
                         )
-
-                        YearLevel(yearLevel) { yearLevel = it }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        AddAttendeeButton(
-                            isValid,
-                            context,
-                            attendanceViewModel,
-                            eventId,
-                            studentId,
-                            fullName,
-                            course,
-                            yearLevel,
-                            onDismiss,
-                            isLoading,
-                            onLoading = { isLoading = it }
-                        )
-                    }
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AddAttendeeButton(
+                    isValid,
+                    context,
+                    attendanceViewModel,
+                    eventId,
+                    studentId,
+                    fullName,
+                    course,
+                    yearLevel,
+                    isPresent,
+                    onDismiss,
+                    isLoading,
+                    onLoading = { isLoading = it }
+                )
             }
         }
     }
@@ -149,6 +174,7 @@ private fun AddAttendeeButton(
     fullName: String,
     course: String,
     yearLevel: Int,
+    isPresent: Boolean,
     onDismiss: () -> Unit,
     isLoading: Boolean,
     onLoading: (Boolean) -> Unit
@@ -163,11 +189,12 @@ private fun AddAttendeeButton(
             onLoading(true)
 
             attendanceViewModel.addAttendeeToEvent(
-                eventId = eventId,
-                studentId = studentId,
-                fullName = fullName,
-                course = course,
-                yearLevel = yearLevel
+                eventId,
+                studentId,
+                fullName,
+                course,
+                yearLevel,
+                isPresent
             ) { result ->
                 onLoading(false)
 
@@ -187,7 +214,13 @@ private fun AddAttendeeButton(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+            disabledContentColor = Color.DarkGray,
+            disabledContainerColor = Color.Gray,
+            containerColor = BluePrimary,
+            contentColor = Color.White
+        )
     ) {
         if (isLoading) {
             CircularProgressIndicator(
@@ -197,9 +230,9 @@ private fun AddAttendeeButton(
                     .drawGradient()
             )
         } else {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Add Attendee")
+            Text(text = "Add Attendee")
         }
     }
 }
@@ -207,11 +240,11 @@ private fun AddAttendeeButton(
 @Composable
 fun YearLevel(yearLevel: Int, onYearLevelChange: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = "Year Level", fontWeight = FontWeight.SemiBold)
+        Text(text = "Year Level", fontWeight = FontWeight.Bold, color = Color.Black)
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             listOf(1, 2, 3, 4).forEach { level ->
                 FilterChip(
@@ -224,12 +257,13 @@ fun YearLevel(yearLevel: Int, onYearLevelChange: (Int) -> Unit) {
                                 2 -> "2nd"
                                 3 -> "3rd"
                                 else -> "4th"
-                            }
+                            },
+                            color = if (yearLevel == level) Color.White else Color.Gray
                         )
                     },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = BluePrimary,
-                        selectedLabelColor = Color.White
+                        selectedLabelColor = Color.White,
                     )
                 )
             }
@@ -264,15 +298,22 @@ fun InputFields(
                     else -> onCourseChange(it)
                 }
             },
-            label = { Text(label) },
+            label = { Text(text = label) },
             leadingIcon = {
                 Image(
                     painter = painterResource(icon),
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             },
             singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color.Black,
+                unfocusedLabelColor = Color.Gray,
+                focusedBorderColor = BluePrimary,
+                focusedTextColor = Color.Black,
+                focusedLabelColor = BluePrimary
+            ),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         )
@@ -280,17 +321,31 @@ fun InputFields(
 }
 
 @Composable
-private fun Header() {
-    Column {
-        Text(
-            text = "Add Attendee",
-            style = MaterialTheme.typography.headlineSmall.copy(brush = BackgroundGradient),
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Enter student details below",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+private fun Header(onDismiss: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            Text(
+                text = "Add Attendee",
+                style = MaterialTheme.typography.headlineSmall.copy(brush = BackgroundGradient),
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Enter student details below",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black
+            )
+        }
+
+        IconButton(onClick = onDismiss) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = null,
+                tint = Color.Red,
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }

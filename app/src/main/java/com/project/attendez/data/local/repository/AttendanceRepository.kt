@@ -5,7 +5,6 @@ import com.project.attendez.data.local.dao.AttendanceDao
 import com.project.attendez.data.local.dao.AttendeeDao
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendeeEntity
-import com.project.attendez.data.local.util.Summary
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -27,7 +26,11 @@ class AttendanceRepository @Inject constructor(
         )
     }
 
+    suspend fun addAll(attendance: List<AttendanceEntity>) = attendanceDao.addAll(attendance)
+
     suspend fun delete(eventId: Long, attendeeId: Long) = attendanceDao.delete(eventId, attendeeId)
+
+    suspend fun deleteAll(attendance: List<AttendanceEntity>) = attendanceDao.deleteAll(attendance)
 
     fun getAttendanceByAttendee(eventId: Long, attendeeId: Long) =
         attendanceDao.getByEventAndAttendee(eventId, attendeeId)
@@ -38,7 +41,8 @@ class AttendanceRepository @Inject constructor(
         studentId: String,
         fullName: String,
         course: String?,
-        yearLevel: Int?
+        yearLevel: Int?,
+        isPresent: Boolean
     ): AddAttendeeResult {
         val existing = attendeeDao.getByStudentIdOnce(studentId)
 
@@ -51,20 +55,12 @@ class AttendanceRepository @Inject constructor(
             )
         )
 
-        attendanceDao.mark(
-            AttendanceEntity(
-                eventId = eventId,
-                attendeeId = attendeeId,
-                isPresent = false
-            )
-        )
+        attendanceDao.mark(AttendanceEntity(eventId, attendeeId, isPresent))
 
         return if (existing != null) AddAttendeeResult.Existing else AddAttendeeResult.New
     }
 
-    suspend fun getAttendanceHistory(): List<Summary> {
-        return attendanceDao.getAttendanceHistory()
-    }
+    suspend fun getAttendanceHistory() = attendanceDao.getAttendanceHistory()
 }
 
 sealed class AddAttendeeResult {

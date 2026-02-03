@@ -1,6 +1,7 @@
 package com.project.attendez.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -15,11 +16,14 @@ interface AttendanceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun mark(attendance: AttendanceEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun addAll(attendance: List<AttendanceEntity>)
+
     @Query("SELECT * FROM attendance WHERE eventId = :eventId")
     fun getByEvent(eventId: Long): Flow<List<AttendanceEntity>>
 
     @Query("SELECT * FROM attendance WHERE eventId = :eventId AND attendeeId = :attendeeId")
-    fun getByEventAndAttendee(eventId: Long, attendeeId: Long): Flow<AttendanceEntity>
+    fun getByEventAndAttendee(eventId: Long, attendeeId: Long): Flow<AttendanceEntity?>
 
     @Query(
         """
@@ -40,12 +44,16 @@ interface AttendanceDao {
     )
     suspend fun delete(eventId: Long, attendeeId: Long)
 
+    @Delete
+    suspend fun deleteAll(attendance: List<AttendanceEntity>)
+
     @Query(
         """
         SELECT 
             e.id AS eventId,
             e.name AS eventName,
             e.date AS date,
+            e.description AS description,
             COUNT(a.attendeeId) AS total,
             SUM(CASE WHEN a.isPresent = 1 THEN 1 ELSE 0 END) AS present,
             SUM(CASE WHEN a.isPresent = 0 THEN 1 ELSE 0 END) AS absent
