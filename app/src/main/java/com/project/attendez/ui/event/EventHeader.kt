@@ -40,8 +40,7 @@ fun EventHeader() {
             Image(
                 painter = painterResource(R.drawable.logo),
                 contentDescription = "Logo",
-                colorFilter = ColorFilter.tint(color = BluePrimary),
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(38.dp)
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
