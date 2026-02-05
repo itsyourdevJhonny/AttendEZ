@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.util.drawGradient
@@ -199,7 +200,7 @@ private fun Header(
                                     AttendanceEntity(
                                         eventId = eventId,
                                         attendeeId = it?.id ?: 0L,
-                                        isPresent = false
+                                        status = AttendanceStatus.PRESENT
                                     )
                                 }
                             )

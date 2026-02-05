@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.event.EmptyAttendance
 import com.project.attendez.ui.event.SearchField
@@ -165,7 +166,6 @@ private fun SearchAttendeeContent(
                             attendee?.let { person ->
                                 AttendeeItem(
                                     attendee = person,
-                                    isPresent = record.isPresent,
                                     onClick = { onAttendance(eventId, person.id) }
                                 )
                             }
@@ -182,7 +182,8 @@ private fun sortAttendance(
     attendees: Map<Long?, AttendeeEntity?>
 ) = derivedStateOf {
     attendance.sortedWith(
-        comparator = compareByDescending<AttendanceEntity> { it.isPresent }
+        comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
+            .thenBy { it.status == AttendanceStatus.EXCUSE }
             .thenBy { attendees[it.attendeeId]?.fullName?.lowercase() }
     )
 }

@@ -56,6 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.R
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
@@ -194,7 +195,8 @@ private fun AddAttendeeButton(
                 fullName,
                 course,
                 yearLevel,
-                isPresent
+                isPresent,
+                status = if (isPresent) AttendanceStatus.PRESENT else AttendanceStatus.ABSENT
             ) { result ->
                 onLoading(false)
 

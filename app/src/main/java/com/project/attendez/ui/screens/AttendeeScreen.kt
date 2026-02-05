@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.attendee.AddAttendeeDialog
 import com.project.attendez.ui.attendee.ErrorState
@@ -214,7 +215,8 @@ fun AttendeeContent(
 
                     val sortedAttendance = attendance
                         .sortedWith(
-                            comparator = compareByDescending<AttendanceEntity> { it.isPresent }
+                            comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
+                                .thenBy { it.status == AttendanceStatus.EXCUSE }
                                 .thenBy { attendees[it.attendeeId]?.lowercase() }
                         )
 
@@ -231,7 +233,7 @@ fun AttendeeContent(
                             attendee?.let { person ->
                                 AttendeeItem(
                                     attendee = person,
-                                    isPresent = record.isPresent,
+                                    status = record.status,
                                     onClick = { onAttendance(eventId, person.id) }
                                 )
                             }
@@ -476,7 +478,7 @@ private fun ActionBars(onExisting: () -> Unit, onAdd: () -> Unit) {
 @Composable
 fun LazyItemScope.AttendeeItem(
     attendee: AttendeeEntity,
-    isPresent: Boolean? = null,
+    status: AttendanceStatus? = null,
     @DrawableRes trailingIcon: Int? = null,
     onClick: () -> Unit
 ) {
@@ -529,9 +531,15 @@ fun LazyItemScope.AttendeeItem(
                 }
             }
 
-            if (isPresent != null) {
+            if (status != null) {
                 Image(
-                    painter = painterResource(if (isPresent) R.drawable.present else R.drawable.pending),
+                    painter = painterResource(
+                        when(status) {
+                            AttendanceStatus.PRESENT -> R.drawable.present_blue
+                            AttendanceStatus.ABSENT -> R.drawable.absent_red
+                            AttendanceStatus.EXCUSE -> R.drawable.excuse
+                        }
+                    ),
                     contentDescription = null,
                     modifier = Modifier.size(28.dp)
                 )

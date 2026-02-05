@@ -3,6 +3,7 @@ package com.project.attendez.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.data.local.repository.AttendanceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,8 +52,12 @@ class AttendanceViewModel @Inject constructor(
         repository.getAttendanceByAttendee(eventId, attendeeId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun updateAttendanceStatus(eventId: Long, attendeeId: Long, isPresent: Boolean) {
-        viewModelScope.launch { repository.mark(eventId, attendeeId, isPresent) }
+    fun updateAttendanceStatus(
+        eventId: Long,
+        attendeeId: Long,
+        status: AttendanceStatus
+    ) {
+        viewModelScope.launch { repository.mark(eventId, attendeeId, status) }
     }
 
     fun deleteAttendance(eventId: Long, attendeeId: Long) {
@@ -70,6 +75,7 @@ class AttendanceViewModel @Inject constructor(
         course: String,
         yearLevel: Int,
         isPresent: Boolean,
+        status: AttendanceStatus,
         onResult: (AddAttendeeResult) -> Unit
     ) {
         viewModelScope.launch {
@@ -79,7 +85,8 @@ class AttendanceViewModel @Inject constructor(
                 fullName,
                 course,
                 yearLevel,
-                isPresent
+                isPresent,
+                status
             )
             onResult(result)
         }

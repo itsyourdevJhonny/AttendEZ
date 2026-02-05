@@ -1,5 +1,6 @@
 package com.project.attendez.ui.attendance
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,12 +33,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
@@ -108,6 +110,8 @@ private fun StatusCard(
     eventId: Long,
     attendeeId: Long
 ) {
+    val context = LocalContext.current
+
     Card(
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -132,11 +136,14 @@ private fun StatusCard(
                 )
 
                 Image(
-                    painter = painterResource(if (attendance?.isPresent == true) R.drawable.present else R.drawable.pending),
-                    contentDescription = null,
-                    colorFilter = if (attendance?.isPresent == true) null else ColorFilter.tint(
-                        color = Color.Red
+                    painter = painterResource(
+                        when(attendance?.status) {
+                            AttendanceStatus.PRESENT -> R.drawable.present_blue
+                            AttendanceStatus.ABSENT -> R.drawable.absent_red
+                            else -> R.drawable.excuse
+                        }
                     ),
+                    contentDescription = null,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -146,38 +153,42 @@ private fun StatusCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                AssistChip(
-                    onClick = {
-                        attendanceViewModel.updateAttendanceStatus(
-                            eventId,
-                            attendeeId,
-                            isPresent = true
-                        )
-                    },
-                    label = { Text("Present") },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (attendance?.isPresent == true) BluePrimary else Color.White,
-                        labelColor = if (attendance?.isPresent == true) Color.White else Color.Black
-                    ),
-                    border = BorderStroke(width = 1.dp, color = BluePrimary)
-                )
+                listOf(
+                    Pair("Present", AttendanceStatus.PRESENT),
+                    Pair("Absent", AttendanceStatus.ABSENT),
+                    Pair("Excuse", AttendanceStatus.EXCUSE)
+                ).forEach { (label, status) ->
+                    AssistChip(
+                        onClick = {
+                            attendanceViewModel.updateAttendanceStatus(eventId, attendeeId, status)
+                            Toast.makeText(context, "Status updated", Toast.LENGTH_SHORT).show()
+                        },
+                        label = { Text(label) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = when {
+                                attendance?.status == AttendanceStatus.PRESENT && label == "Present" -> BluePrimary
+                                attendance?.status == AttendanceStatus.ABSENT && label == "Absent" -> Color.Red
+                                attendance?.status == AttendanceStatus.EXCUSE && label == "Excuse" -> Color.Green
+                                else -> Color.White
+                            },
+                            labelColor = when {
+                                attendance?.status == AttendanceStatus.PRESENT && label == "Present" ||
+                                        attendance?.status == AttendanceStatus.ABSENT && label == "Absent" ||
+                                        attendance?.status == AttendanceStatus.EXCUSE && label == "Excuse" -> Color.White
 
-                AssistChip(
-                    onClick = {
-                        attendanceViewModel.updateAttendanceStatus(
-                            eventId,
-                            attendeeId,
-                            isPresent = false
+                                else -> Color.Black
+                            }
+                        ),
+                        border = BorderStroke(
+                            width = 1.dp, color = when {
+                                attendance?.status == AttendanceStatus.PRESENT && label == "Present" -> BluePrimary
+                                attendance?.status == AttendanceStatus.ABSENT && label == "Absent" -> Color.Red
+                                attendance?.status == AttendanceStatus.EXCUSE && label == "Excuse" -> Color.Green
+                                else -> Color.White
+                            }
                         )
-                    },
-                    label = { Text("Absent") },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = if (attendance?.isPresent == false) Color.Red
-                        else Color.White,
-                        labelColor = if (attendance?.isPresent == false) Color.White else Color.Black
-                    ),
-                    border = BorderStroke(width = 1.dp, color = Color.Red)
-                )
+                    )
+                }
             }
         }
     }

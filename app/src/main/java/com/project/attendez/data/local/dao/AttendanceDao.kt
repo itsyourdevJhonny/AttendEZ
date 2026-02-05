@@ -28,8 +28,8 @@ interface AttendanceDao {
     @Query(
         """
         SELECT
-            SUM(CASE WHEN isPresent = 1 THEN 1 ELSE 0 END) AS presentCount,
-            SUM(CASE WHEN isPresent = 0 THEN 1 ELSE 0 END) AS absentCount
+            SUM(CASE WHEN status = 'PRESENT' = 1 THEN 1 ELSE 0 END) AS presentCount,
+            SUM(CASE WHEN status = 'ABSENT' = 0 THEN 1 ELSE 0 END) AS absentCount
         FROM attendance
         WHERE eventId = :eventId
     """
@@ -55,8 +55,8 @@ interface AttendanceDao {
             e.date AS date,
             e.description AS description,
             COUNT(a.attendeeId) AS total,
-            SUM(CASE WHEN a.isPresent = 1 THEN 1 ELSE 0 END) AS present,
-            SUM(CASE WHEN a.isPresent = 0 THEN 1 ELSE 0 END) AS absent
+            SUM(CASE WHEN a.status = 'PRESENT' = 1 THEN 1 ELSE 0 END) AS present,
+            SUM(CASE WHEN a.status = 'ABSENT' = 0 THEN 1 ELSE 0 END) AS absent
         FROM attendance a
         INNER JOIN events e ON a.eventId = e.id
         GROUP BY e.id

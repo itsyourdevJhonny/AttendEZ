@@ -29,6 +29,12 @@ import androidx.room.Index
 data class AttendanceEntity(
     val eventId: Long,
     val attendeeId: Long,
-    val isPresent: Boolean,
+    val status: AttendanceStatus,
     val markedAt: Long = System.currentTimeMillis()
 )
+
+enum class AttendanceStatus {
+    PRESENT,
+    ABSENT,
+    EXCUSE
+}

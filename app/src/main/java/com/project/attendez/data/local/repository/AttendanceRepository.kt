@@ -4,6 +4,7 @@ import androidx.room.Transaction
 import com.project.attendez.data.local.dao.AttendanceDao
 import com.project.attendez.data.local.dao.AttendeeDao
 import com.project.attendez.data.local.entity.AttendanceEntity
+import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -16,12 +17,16 @@ class AttendanceRepository @Inject constructor(
     fun getAttendance(eventId: Long): Flow<List<AttendanceEntity>> =
         attendanceDao.getByEvent(eventId)
 
-    suspend fun mark(eventId: Long, attendeeId: Long, isPresent: Boolean) {
+    suspend fun mark(
+        eventId: Long,
+        attendeeId: Long,
+        status: AttendanceStatus
+    ) {
         attendanceDao.mark(
             AttendanceEntity(
                 eventId = eventId,
                 attendeeId = attendeeId,
-                isPresent = isPresent
+                status = status
             )
         )
     }
@@ -42,7 +47,8 @@ class AttendanceRepository @Inject constructor(
         fullName: String,
         course: String?,
         yearLevel: Int?,
-        isPresent: Boolean
+        isPresent: Boolean,
+        status: AttendanceStatus
     ): AddAttendeeResult {
         val existing = attendeeDao.getByStudentIdOnce(studentId)
 
@@ -55,7 +61,7 @@ class AttendanceRepository @Inject constructor(
             )
         )
 
-        attendanceDao.mark(AttendanceEntity(eventId, attendeeId, isPresent))
+        attendanceDao.mark(AttendanceEntity(eventId, attendeeId, status))
 
         return if (existing != null) AddAttendeeResult.Existing else AddAttendeeResult.New
     }

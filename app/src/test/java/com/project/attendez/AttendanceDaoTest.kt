@@ -52,8 +52,7 @@ class AttendanceDaoTest : BaseRoomTest() {
         attendanceDao.mark(
             AttendanceEntity(
                 eventId = eventId,
-                attendeeId = attendeeId,
-                isPresent = true
+                attendeeId = attendeeId
             )
         )
 
@@ -88,8 +87,8 @@ class AttendanceDaoTest : BaseRoomTest() {
             )
         )
 
-        attendanceDao.mark(AttendanceEntity(eventId, a1, true))
-        attendanceDao.mark(AttendanceEntity(eventId, a2, false))
+        attendanceDao.mark(AttendanceEntity(eventId, a1))
+        attendanceDao.mark(AttendanceEntity(eventId, a2))
 
         val summary = attendanceDao.getSummary(eventId).first()
 
