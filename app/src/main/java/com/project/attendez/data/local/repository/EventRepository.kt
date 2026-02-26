@@ -15,4 +15,6 @@ class EventRepository @Inject constructor(
     suspend fun create(event: EventEntity): Long = dao.insert(event)
 
     suspend fun delete(event: EventEntity) = dao.delete(event)
+
+    suspend fun update(event: EventEntity) = dao.update(event)
 }
