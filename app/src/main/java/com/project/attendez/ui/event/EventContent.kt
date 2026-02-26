@@ -66,10 +66,10 @@ fun EventContent(
     filteredEvents: List<EventEntity>,
     selectedEvent: EventEntity?,
     isLoading: Boolean,
-    showDeleteSheet: Boolean,
+    showSheet: Boolean,
     onTabSelected: (Int) -> Unit,
     onEventSelected: (EventEntity) -> Unit,
-    onShowDeleteSheet: (Boolean) -> Unit,
+    onShowSheet: (Boolean) -> Unit,
     onEventClick: (Long) -> Unit,
     onHistory: () -> Unit,
     onCreate: () -> Unit,
@@ -137,7 +137,7 @@ fun EventContent(
                         items(items = filteredEvents, key = { it.id }) { event ->
                             EventItem(event, onEventClick) {
                                 onEventSelected(event)
-                                onShowDeleteSheet(true)
+                                onShowSheet(true)
                             }
                         }
                     }
@@ -146,8 +146,8 @@ fun EventContent(
         }
     }
 
-    if (showDeleteSheet) {
-        DeleteEventSheet(selectedEvent, eventViewModel) { onShowDeleteSheet(false) }
+    if (showSheet) {
+        EventSheet(selectedEvent, eventViewModel) { onShowSheet(false) }
     }
 }
 
@@ -166,43 +166,6 @@ private fun Actions(onCreate: () -> Unit, onHistory: () -> Unit) {
                 iconRes = iconRes,
                 onClick = { if (label == "Create") onCreate() else onHistory() }
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DeleteEventSheet(
-    selectedEvent: EventEntity?,
-    eventViewModel: EventViewModel,
-    onDismiss: () -> Unit
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, dragHandle = null) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    selectedEvent?.let { event ->
-                        eventViewModel.deleteEvent(event)
-                        onDismiss()
-                    }
-                }
-                .padding(8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(Color.Red.copy(alpha = 0.6f), CircleShape)
-                    .padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.White
-                )
-            }
-
-            Text(text = " Delete Event", fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -330,14 +293,14 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
 fun LazyItemScope.EventItem(
     event: EventEntity,
     onEventClick: (Long) -> Unit,
-    onDelete: () -> Unit
+    onOpenSheet: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onEventClick(event.id) },
-                    onLongPress = { onDelete() }
+                    onLongPress = { onOpenSheet() }
                 )
             }
             .background(BlueSecondary.copy(alpha = 0.5f), CircleShape)
