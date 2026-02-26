@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.project.attendez.data.local.entity.EventEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -21,4 +22,7 @@ interface EventDao {
 
     @Delete
     suspend fun delete(event: EventEntity)
+
+    @Update
+    suspend fun update(event: EventEntity)
 }
