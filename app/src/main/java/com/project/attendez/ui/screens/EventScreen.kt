@@ -62,7 +62,7 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
                 showDeleteSheet,
                 onTabSelected = { selectedTabIndex = it },
                 onEventSelected = { selectedEvent = it },
-                onShowDeleteSheet = { showDeleteSheet = it },
+                onShowSheet = { showDeleteSheet = it },
                 onEventClick = onEventClick,
                 onHistory = onHistory,
                 onCreate = { showCreateDialog = true },
