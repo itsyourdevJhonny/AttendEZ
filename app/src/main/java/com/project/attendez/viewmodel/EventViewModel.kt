@@ -50,4 +50,8 @@ class EventViewModel @Inject constructor(
     fun deleteEvent(event: EventEntity) {
         viewModelScope.launch { repository.delete(event) }
     }
+
+    fun updateEvent(event: EventEntity) {
+        viewModelScope.launch { repository.update(event) }
+    }
 }
