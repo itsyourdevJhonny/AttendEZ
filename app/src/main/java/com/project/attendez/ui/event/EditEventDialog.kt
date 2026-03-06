@@ -106,7 +106,9 @@ fun EditEventDialog(
                     DatePickerToggleButton(selectedDate) { showDatePicker = true }
 
                     EditButton(
-                        enabled = name != selectedEvent?.name || description != selectedEvent?.description || selectedDate != selectedEvent?.date,
+                        enabled = (name != selectedEvent?.name && name?.isNotBlank() == true) ||
+                                (description != selectedEvent?.description && description?.isNotBlank() == true) ||
+                                (selectedDate != selectedEvent?.date && selectedDate != LocalDate.now()),
                         onEdit = {
                             selectedEvent?.let { event ->
                                 eventViewModel.updateEvent(
@@ -166,7 +168,7 @@ private fun Header(onDismiss: () -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Create Attendance",
+            text = "Edit Attendance",
             style = MaterialTheme.typography.titleLarge.copy(brush = BackgroundGradient),
             fontWeight = FontWeight.Black
         )
