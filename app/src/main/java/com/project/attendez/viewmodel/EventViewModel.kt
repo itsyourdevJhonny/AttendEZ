@@ -39,10 +39,10 @@ class EventViewModel @Inject constructor(
 
     fun getEventById(id: Long) = repository.getEventById(id)
 
-    fun createEvent(name: String, date: LocalDate, description: String) {
+    fun createEvent(name: String, startDate: LocalDate, endDate: LocalDate, description: String, color: Long) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.create(EventEntity(name = name, date = date, description = description))
+            repository.create(EventEntity(name = name, startDate = startDate, endDate = endDate, description = description, color = color))
             _isLoading.value = false
         }
     }
