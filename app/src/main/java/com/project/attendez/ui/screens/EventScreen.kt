@@ -38,8 +38,8 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
     var showDeleteSheet by remember { mutableStateOf(false) }
 
     val today = LocalDate.now()
-    val ongoingEvents = events.filter { it.date >= today }.sortedByDescending { it.createdAt }
-    val pastEvents = events.filter { it.date < today }
+    val ongoingEvents = events.filter { it.startDate >= today }.sortedByDescending { it.createdAt }
+    val pastEvents = events.filter { it.startDate < today }
 
     val filteredEvents = (if (selectedTabIndex == 0) ongoingEvents else pastEvents)
         .filter { it.name.contains(searchQuery, ignoreCase = true) }
@@ -59,7 +59,7 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
                 filteredEvents,
                 selectedEvent,
                 isLoading,
-                showDeleteSheet,
+                showSheet = showDeleteSheet,
                 onTabSelected = { selectedTabIndex = it },
                 onEventSelected = { selectedEvent = it },
                 onShowSheet = { showDeleteSheet = it },
@@ -73,8 +73,8 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
         AnimatedVisibility(visible = showCreateDialog) {
             CreateEventDialog(
                 onDismiss = { showCreateDialog = false },
-                onCreate = { name, date, description ->
-                    eventViewModel.createEvent(name, date, description)
+                onCreate = { name, startDate, endDate, description, color ->
+                    eventViewModel.createEvent(name, startDate, endDate, description, color)
                     showCreateDialog = false
                 }
             )
