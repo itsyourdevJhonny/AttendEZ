@@ -47,7 +47,6 @@ class AttendanceRepository @Inject constructor(
         fullName: String,
         course: String?,
         yearLevel: Int?,
-        isPresent: Boolean,
         status: AttendanceStatus
     ): AddAttendeeResult {
         val existing = attendeeDao.getByStudentIdOnce(studentId)
