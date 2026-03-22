@@ -13,14 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.project.attendez.R
 import com.project.attendez.ui.theme.BackgroundGradient
-import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.Typography
 import com.project.attendez.ui.util.drawGradient
 
