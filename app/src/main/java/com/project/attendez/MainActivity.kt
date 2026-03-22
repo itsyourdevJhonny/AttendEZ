@@ -17,6 +17,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.project.attendez.navigation.Routes
 import com.project.attendez.ui.screens.AttendanceScreen
 import com.project.attendez.ui.screens.AttendeeScreen
 import com.project.attendez.ui.screens.EventScreen
@@ -45,7 +46,7 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "event",
+        startDestination = Routes.Event.route,
         enterTransition = {
             slideInHorizontally(initialOffsetX = { 1000 }) + fadeIn(animationSpec = tween(500))
         },
@@ -59,28 +60,28 @@ fun AppNavigation() {
             slideOutHorizontally(targetOffsetX = { 1000 }) + fadeOut(animationSpec = tween(500))
         }
     ) {
-        composable("event") {
+        composable(Routes.Event.route) {
             EventScreen(
-                onEventClick = { eventId -> navController.navigate("attendee/$eventId") },
-                onHistory = { navController.navigate("history") }
+                onEventClick = { eventId -> navController.navigate(Routes.Attendee.route + "/$eventId") },
+                onHistory = { navController.navigate(Routes.History.route) }
             )
         }
 
         composable(
-            route = "attendee/{eventId}",
+            route = Routes.Attendee.route + "/{eventId}",
             arguments = listOf(navArgument("eventId") { type = NavType.LongType })
         ) { backStackEntry ->
             val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
 
             AttendeeScreen(
                 eventId,
-                onAttendance = { eventId, attendeeId -> navController.navigate("attendance/$eventId/$attendeeId") },
+                onAttendance = { eventId, attendeeId -> navController.navigate(Routes.Attendance.route + "/$eventId/$attendeeId") },
                 onBack = { navController.popBackStack() }
             )
         }
 
         composable(
-            route = "attendance/{eventId}/{attendeeId}",
+            route = Routes.Attendance.route + "/{eventId}/{attendeeId}",
             arguments = listOf(
                 navArgument("eventId") { type = NavType.LongType },
                 navArgument("attendeeId") { type = NavType.LongType }
@@ -92,7 +93,7 @@ fun AppNavigation() {
             AttendanceScreen(eventId, attendeeId, onBack = { navController.popBackStack() })
         }
 
-        composable("history") {
+        composable(Routes.History.route) {
             HistoryScreen { navController.popBackStack() }
         }
     }
