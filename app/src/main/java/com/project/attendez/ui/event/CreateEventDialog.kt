@@ -7,6 +7,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,11 +40,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,34 +55,72 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
+import com.project.attendez.ui.theme.BlueSecondary
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+
+val EventColors = listOf(
+    BlueSecondary,
+    Color(0xFF2196F3), // blue
+    Color(0xFF4CAF50), // green
+    Color(0xFFFF9800), // orange
+    Color(0xFFE91E63), // pink
+    Color(0xFF9C27B0), // purple
+    Color(0xFFF44336), // red
+    Color(0xFF009688), // teal
+    Color(0xFFFFC107), // amber
+    Color(0xFF3F51B5)  // indigo
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEventDialog(
     onDismiss: () -> Unit,
-    onCreate: (name: String, date: LocalDate, description: String) -> Unit
+    onCreate: (
+        name: String,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        description: String,
+        color: Long,
+    ) -> Unit,
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
 
-    var showDatePicker by remember { mutableStateOf(false) }
+    var startDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var endDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+
+    var selectedColor by remember { mutableStateOf(BlueSecondary) }
+
+    var duration by remember { mutableIntStateOf(1) }
+    var isCustomRange by remember { mutableStateOf(false) }
+
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
     var isLoading by remember { mutableStateOf(false) }
 
     val isFormValid = name.isNotBlank()
 
+    // auto update end date when duration changes
+    LaunchedEffect(startDate, duration, isCustomRange) {
+        if (!isCustomRange) {
+            endDate = startDate.plusDays((duration - 1).toLong())
+        }
+    }
+
     AnimatedVisibility(
         visible = true,
         enter = scaleIn() + fadeIn(),
-        exit = scaleOut() + fadeOut(),
+        exit = scaleOut() + fadeOut()
     ) {
         Box(
             modifier = Modifier
@@ -92,6 +135,7 @@ fun CreateEventDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 Header(onDismiss)
 
                 InputField(
@@ -108,25 +152,92 @@ fun CreateEventDialog(
                     onValueChange = { description = it }
                 )
 
+                Text(
+                    text = "Event Color",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
 
-                DatePickerToggleButton(selectedDate) { showDatePicker = true }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    EventColors.forEach { color ->
+                        val isSelected = selectedColor == color
+
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(color = color, shape = RoundedCornerShape(8.dp))
+                                .then(
+                                    if (isSelected)
+                                        Modifier.border(
+                                            width = 3.dp,
+                                            color = Color.Black,
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                    else Modifier
+                                )
+                                .clickable { selectedColor = color }
+                        )
+                    }
+                }
+
+                // START DATE
+                Text(text = "Start Date", fontWeight = FontWeight.Bold, color = Color.Black)
+
+                DatePickerToggleButton(startDate) {
+                    showStartPicker = true
+                }
+
+                Text(text = "End Date", fontWeight = FontWeight.Bold, color = Color.Black)
+
+                DatePickerToggleButton(endDate) {
+                    showEndPicker = true
+                }
+
+                // SHOW TOTAL DAYS
+                val totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1
+
+                Text(
+                    text = "Total Days: $totalDays",
+                    fontWeight = FontWeight.Bold,
+                    color = BluePrimary
+                )
 
                 CreateButton(
-                    onCreate,
-                    name,
-                    selectedDate,
-                    description,
-                    onDismiss,
-                    isFormValid,
-                    isLoading,
+                    onCreate = {
+                        onCreate(
+                            name.trim(),
+                            startDate,
+                            endDate,
+                            description.trim(),
+                            selectedColor.toColorLong()
+                        )
+                    },
+                    onDismiss = onDismiss,
+                    isFormValid = isFormValid,
+                    isLoading = isLoading,
                     onLoading = { isLoading = it }
                 )
             }
         }
     }
 
-    if (showDatePicker) {
-        EventDatePickerDialog(onDateSelected = { selectedDate = it }) { showDatePicker = false }
+    // START DATE PICKER
+    if (showStartPicker) {
+        EventDatePickerDialog(
+            onDateSelected = { startDate = it },
+            onDismiss = { showStartPicker = false }
+        )
+    }
+
+    // END DATE PICKER
+    if (showEndPicker) {
+        EventDatePickerDialog(
+            onDateSelected = { endDate = it },
+            onDismiss = { showEndPicker = false }
+        )
     }
 }
 
@@ -158,7 +269,7 @@ private fun InputField(
     label: String,
     singleLine: Boolean,
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
         value = value,
@@ -198,47 +309,29 @@ private fun DatePickerToggleButton(selectedDate: LocalDate?, onClick: () -> Unit
     }
 }
 
-@Composable
-private fun CreateButton(
-    onCreate: (String, LocalDate, String) -> Unit,
-    name: String,
-    selectedDate: LocalDate,
-    description: String,
-    onDismiss: () -> Unit,
-    isFormValid: Boolean,
-    isLoading: Boolean,
-    onLoading: (Boolean) -> Unit
-) {
-    Button(
-        onClick = {
-            onLoading(true)
-            onCreate(name.trim(), selectedDate, description.trim())
-            onLoading(false)
-            onDismiss()
-        },
-        enabled = isFormValid && !isLoading,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = BluePrimary,
-            contentColor = Color.White,
-            disabledContainerColor = Color.Gray,
-            disabledContentColor = Color.DarkGray
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-    ) {
-        if (isLoading) {
-            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(22.dp))
-        } else {
-            Text(text = "Create", fontSize = 16.sp, fontWeight = FontWeight.Black)
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventDatePickerDialog(onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    val datePickerState = rememberDatePickerState()
+//    val datePickerState = rememberDatePickerState()
+    val today = LocalDate.now()
+
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                val date = Instant
+                    .ofEpochMilli(utcTimeMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+
+                return !date.isBefore(today)
+            }
+
+            override fun isSelectableYear(year: Int): Boolean {
+                return year >= today.year
+            }
+        }
+    )
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -303,5 +396,42 @@ fun EventDatePickerDialog(onDateSelected: (LocalDate) -> Unit, onDismiss: () -> 
                 todayDateBorderColor = BluePrimary,
             )
         )
+    }
+}
+
+@Composable
+private fun CreateButton(
+    onCreate: () -> Unit,
+    onDismiss: () -> Unit,
+    isFormValid: Boolean,
+    isLoading: Boolean,
+    onLoading: (Boolean) -> Unit,
+) {
+    Button(
+        onClick = {
+            onLoading(true)
+            onCreate()
+            onLoading(false)
+            onDismiss()
+        },
+        enabled = isFormValid && !isLoading,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = BluePrimary,
+            contentColor = Color.White,
+            disabledContainerColor = Color.Gray,
+            disabledContentColor = Color.DarkGray
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(
+                strokeWidth = 2.dp,
+                modifier = Modifier.size(22.dp)
+            )
+        } else {
+            Text("Create", fontWeight = FontWeight.Bold)
+        }
     }
 }
