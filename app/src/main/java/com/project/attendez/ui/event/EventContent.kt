@@ -3,6 +3,11 @@ package com.project.attendez.ui.event
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +31,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -37,23 +44,31 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toColorLong
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueSecondary
+import com.project.attendez.ui.theme.Typography
 import com.project.attendez.ui.util.drawGradient
 import com.project.attendez.viewmodel.EventViewModel
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +88,7 @@ fun EventContent(
     onEventClick: (Long) -> Unit,
     onHistory: () -> Unit,
     onCreate: () -> Unit,
-    onSearching: (Boolean) -> Unit
+    onSearching: (Boolean) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -171,11 +186,14 @@ private fun Actions(onCreate: () -> Unit, onHistory: () -> Unit) {
 }
 
 @Composable
-fun EmptyAttendance(label: String = "There are no attendance available at this time.") {
+fun EmptyAttendance(
+    label: String = "There are no attendance available at this time.",
+    isFullSize: Boolean = true,
+) {
+    val modifier = if (isFullSize) Modifier.fillMaxSize() else Modifier
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
+        modifier = modifier.padding(horizontal = 16.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -204,7 +222,7 @@ private fun EventsHeader(
     selectedTabIndex: Int,
     totalOngoing: Int,
     totalPast: Int,
-    onSearching: (Boolean) -> Unit
+    onSearching: (Boolean) -> Unit,
 ) {
 
     val prefix = if (selectedTabIndex == 0) "Ongoing" else "Past"
@@ -235,7 +253,7 @@ private fun EventsHeader(
 
 @Composable
 private fun CreateAction(label: String, @DrawableRes iconRes: Int, onClick: () -> Unit) {
-    Column(
+    /*Column(
         modifier = Modifier
             .clickable { onClick() }
             .width(100.dp)
@@ -250,6 +268,27 @@ private fun CreateAction(label: String, @DrawableRes iconRes: Int, onClick: () -
         )
 
         Text(text = label, color = Color.Black, fontWeight = FontWeight.Bold)
+    }*/
+
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .width(100.dp)
+                .padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = painterResource(iconRes),
+                contentDescription = label,
+                modifier = Modifier.size(38.dp)
+            )
+
+            Text(text = label, color = Color.Black, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -293,9 +332,12 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
 fun LazyItemScope.EventItem(
     event: EventEntity,
     onEventClick: (Long) -> Unit,
-    onOpenSheet: () -> Unit
+    onOpenSheet: () -> Unit,
 ) {
-    Row(
+    val eventColor = Color(event.color.toColorInt())
+    val totalDays = ChronoUnit.DAYS.between(event.startDate, event.endDate).toInt() + 1
+
+    Column(
         modifier = Modifier
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -303,12 +345,14 @@ fun LazyItemScope.EventItem(
                     onLongPress = { onOpenSheet() }
                 )
             }
-            .background(BlueSecondary.copy(alpha = 0.5f), CircleShape)
+            .background(
+                brush = Brush.verticalGradient(listOf(eventColor, eventColor.copy(alpha = 0.7f))),
+                shape = RoundedCornerShape(16.dp)
+            )
             .fillMaxWidth()
             .padding(8.dp)
             .animateItem(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -326,8 +370,82 @@ fun LazyItemScope.EventItem(
                 fontWeight = FontWeight.Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.widthIn(max = 216.dp)
+                modifier = Modifier.weight(1f)
+            )
+
+            EventStatus(event)
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "${event.startDate} - ${event.endDate}",
+                style = Typography.labelMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+            Text(text = "/", style = Typography.titleLarge, color = Color.White)
+            Text(
+                text = "$totalDays Day${if (totalDays > 1) "s" else ""}",
+                style = Typography.labelMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Black
             )
         }
+    }
+}
+
+@Composable
+fun EventStatus(event: EventEntity) {
+
+    val started = event.lastAttendanceDate != null
+
+    val infiniteTransition = rememberInfiniteTransition(label = "")
+
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (started) 1.4f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = ""
+    )
+
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (started) 0.4f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = ""
+    )
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    this.alpha = alpha
+                }
+                .background(
+                    color = if (started) Color.Green else Color.Red,
+                    shape = CircleShape
+                )
+        )
+
+        Text(
+            text = if (started) "Started" else "Ongoing",
+            style = Typography.bodyMedium.copy(color = Color.White)
+        )
     }
 }
