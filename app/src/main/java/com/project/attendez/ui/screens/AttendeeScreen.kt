@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -70,6 +71,7 @@ import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
+import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.ui.attendee.AddAttendeeDialog
 import com.project.attendez.ui.attendee.ErrorState
 import com.project.attendez.ui.attendee.ExistingAttendeeDialog
@@ -84,6 +86,8 @@ import com.project.attendez.viewmodel.AttendanceUiState
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.AttendeeViewModel
 import com.project.attendez.viewmodel.EventViewModel
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,91 +161,150 @@ fun AttendeeContent(
     onAttendance: (Long, Long) -> Unit,
     onExisting: () -> Unit,
     onAdd: () -> Unit,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
 ) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
     val attendanceViewModel = hiltViewModel<AttendanceViewModel>()
 
+    val event by remember(eventId) {
+        eventViewModel.getEventById(eventId)
+    }.collectAsState(initial = null)
+
     val uiState by attendanceViewModel.uiState.collectAsState()
 
     LaunchedEffect(attendance) { attendanceViewModel.loadEventAttendance(eventId) }
 
-    Column(
-        modifier = Modifier
-            .padding(paddingValues)
-            .fillMaxSize()
-            .background(Color.White)
-    ) {
-        Header()
+    if (event != null) {
+        val today = LocalDate.now()
+        val hasAttendanceToday = event?.lastAttendanceDate == today
 
-        EventCard(eventId, eventViewModel)
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(Color.White),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Header()
 
-        Spacer(Modifier.height(16.dp))
+                EventCard(eventId, eventViewModel)
 
-        ActionBars(onExisting = onExisting, onAdd = onAdd)
+                Spacer(Modifier.height(16.dp))
 
-        Spacer(Modifier.height(20.dp))
+                ActionBars(onExisting = onExisting, onAdd = onAdd)
 
-        HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(bottom = 8.dp))
+                Spacer(Modifier.height(20.dp))
 
-        AttendeeHeader(
-            attendanceSize = attendance.size,
-            attendance,
-            attendanceViewModel,
-            onSearch
-        )
+                HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(bottom = 8.dp))
 
-        HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(top = 8.dp))
-
-        when (uiState) {
-            AttendanceUiState.Loading -> LoadingState()
-
-            is AttendanceUiState.Error -> {
-                ErrorState(
-                    message = (uiState as AttendanceUiState.Error).message,
-                    onRetry = { /*attendanceViewModel.loadEventAttendance(eventId)*/ }
+                AttendeeHeader(
+                    attendanceSize = attendance.size,
+                    attendance,
+                    attendanceViewModel,
+                    onSearch
                 )
-            }
 
-            is AttendanceUiState.Success -> {
-                val attendance = (uiState as AttendanceUiState.Success).attendance
+                HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(top = 8.dp))
 
-                if (attendance.isEmpty()) {
-                    EmptyAttendance(label = "No attendees yet.\nAdd students to start tracking attendance.")
-                } else {
-                    val attendees = attendeeViewModel.getAttendeesByEventId(eventId)
-                        .collectAsState(initial = emptyList()).value.associate { it?.id to it?.fullName }
+                if (hasAttendanceToday) {
 
-                    val sortedAttendance = attendance
-                        .sortedWith(
-                            comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
-                                .thenBy { it.status == AttendanceStatus.EXCUSE }
-                                .thenBy { attendees[it.attendeeId]?.lowercase() }
-                        )
+                    when (uiState) {
+                        AttendanceUiState.Loading -> LoadingState()
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(items = sortedAttendance, key = { it.attendeeId }) { record ->
-                            val attendee by remember(record.attendeeId) {
-                                attendeeViewModel.getAttendeeById(record.attendeeId)
-                            }.collectAsState(initial = null)
+                        is AttendanceUiState.Error -> {
+                            ErrorState(
+                                message = (uiState as AttendanceUiState.Error).message,
+                                onRetry = { /*attendanceViewModel.loadEventAttendance(eventId)*/ }
+                            )
+                        }
 
-                            attendee?.let { person ->
-                                AttendeeItem(
-                                    attendee = person,
-                                    status = record.status,
-                                    onClick = { onAttendance(eventId, person.id) }
-                                )
+                        is AttendanceUiState.Success -> {
+                            val attendance = (uiState as AttendanceUiState.Success).attendance
+
+                            if (attendance.isEmpty()) {
+                                Box(modifier = Modifier.padding(top = 32.dp)) {
+                                    EmptyAttendance(
+                                        label = "No attendees yet.\nAdd students to start tracking attendance.",
+                                        isFullSize = false
+                                    )
+                                }
+                            } else {
+                                val attendees = attendeeViewModel.getAttendeesByEventId(eventId)
+                                    .collectAsState(initial = emptyList()).value.associate { it?.id to it?.fullName }
+
+                                val sortedAttendance = attendance
+                                    .sortedWith(
+                                        comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
+                                            .thenBy { it.status == AttendanceStatus.EXCUSE }
+                                            .thenBy { attendees[it.attendeeId]?.lowercase() }
+                                    )
+
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    items(
+                                        items = sortedAttendance,
+                                        key = { it.attendeeId }) { record ->
+                                        val attendee by remember(record.attendeeId) {
+                                            attendeeViewModel.getAttendeeById(record.attendeeId)
+                                        }.collectAsState(initial = null)
+
+                                        attendee?.let { person ->
+                                            AttendeeItem(
+                                                attendee = person,
+                                                status = record.status,
+                                                onClick = { onAttendance(eventId, person.id) }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
+
+            MakeOrUpdateAttendanceButton(event, hasAttendanceToday, eventViewModel)
         }
+    }
+}
+
+@Composable
+private fun ColumnScope.MakeOrUpdateAttendanceButton(
+    event: EventEntity?,
+    hasAttendanceToday: Boolean,
+    eventViewModel: EventViewModel,
+) {
+    val totalDays = ChronoUnit.DAYS.between(event?.startDate, event?.endDate).toInt() + 1
+
+    val completedDays =
+        event?.lastAttendanceDate?.let {
+            ChronoUnit.DAYS.between(event.startDate, it).toInt() + 1
+        } ?: 0
+
+    val buttonText = when {
+        hasAttendanceToday -> "Update Attendance ($completedDays/$totalDays)"
+        else -> "Make Attendance ($completedDays/$totalDays)"
+    }
+
+    TextButton(
+        onClick = {
+            if (!hasAttendanceToday) {
+                eventViewModel.updateEvent(event!!.copy(lastAttendanceDate = LocalDate.now()))
+            }
+        },
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = BluePrimary,
+            contentColor = Color.White
+        ),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
+        modifier = Modifier.align(Alignment.CenterHorizontally)
+    ) {
+        Text(buttonText)
     }
 }
 
@@ -302,7 +365,7 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
                     )
 
                     Text(
-                        text = "${it.date}",
+                        text = "${it.startDate}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Black
                     )
@@ -318,7 +381,7 @@ private fun AttendeeHeader(
     attendanceSize: Int,
     attendance: List<AttendanceEntity>,
     attendanceViewModel: AttendanceViewModel,
-    onSearch: () -> Unit
+    onSearch: () -> Unit,
 ) {
     val context = LocalContext.current
     var confirmRemoveAll by remember { mutableStateOf(false) }
@@ -389,7 +452,7 @@ private fun ConfirmDialog(
     context: Context,
     attendance: List<AttendanceEntity>,
     attendanceViewModel: AttendanceViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = {},
@@ -480,7 +543,7 @@ fun LazyItemScope.AttendeeItem(
     attendee: AttendeeEntity,
     status: AttendanceStatus? = null,
     @DrawableRes trailingIcon: Int? = null,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -534,7 +597,7 @@ fun LazyItemScope.AttendeeItem(
             if (status != null) {
                 Image(
                     painter = painterResource(
-                        when(status) {
+                        when (status) {
                             AttendanceStatus.PRESENT -> R.drawable.present_blue
                             AttendanceStatus.ABSENT -> R.drawable.absent_red
                             AttendanceStatus.EXCUSE -> R.drawable.excuse
