@@ -64,7 +64,7 @@ fun EditEventDialog(
     val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf(selectedEvent?.name) }
     var description by rememberSaveable { mutableStateOf(selectedEvent?.description) }
-    var selectedDate by rememberSaveable { mutableStateOf(selectedEvent?.date) }
+    var selectedDate by rememberSaveable { mutableStateOf(selectedEvent?.endDate) }
 
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -108,14 +108,14 @@ fun EditEventDialog(
                     EditButton(
                         enabled = (name != selectedEvent?.name && name?.isNotBlank() == true) ||
                                 (description != selectedEvent?.description && description?.isNotBlank() == true) ||
-                                (selectedDate != selectedEvent?.date && selectedDate != LocalDate.now()),
+                                (selectedDate != selectedEvent?.endDate && selectedDate != LocalDate.now()),
                         onEdit = {
                             selectedEvent?.let { event ->
                                 eventViewModel.updateEvent(
                                     event = event.copy(
                                         name = name.orEmpty(),
                                         description = description.orEmpty(),
-                                        date = selectedDate ?: selectedEvent.date
+                                        endDate = selectedDate ?: selectedEvent.endDate
                                     )
                                 )
                             }
