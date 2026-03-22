@@ -74,7 +74,6 @@ class AttendanceViewModel @Inject constructor(
         fullName: String,
         course: String,
         yearLevel: Int,
-        isPresent: Boolean,
         status: AttendanceStatus,
         onResult: (AddAttendeeResult) -> Unit
     ) {
@@ -85,7 +84,6 @@ class AttendanceViewModel @Inject constructor(
                 fullName,
                 course,
                 yearLevel,
-                isPresent,
                 status
             )
             onResult(result)
