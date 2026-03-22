@@ -195,7 +195,6 @@ private fun AddAttendeeButton(
                 fullName,
                 course,
                 yearLevel,
-                isPresent,
                 status = if (isPresent) AttendanceStatus.PRESENT else AttendanceStatus.ABSENT
             ) { result ->
                 onLoading(false)
