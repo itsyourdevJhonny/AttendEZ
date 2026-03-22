@@ -52,7 +52,7 @@ interface AttendanceDao {
         SELECT 
             e.id AS eventId,
             e.name AS eventName,
-            e.date AS date,
+            e.startDate AS date,
             e.description AS description,
             COUNT(a.attendeeId) AS total,
             SUM(CASE WHEN a.status = 'PRESENT' = 1 THEN 1 ELSE 0 END) AS present,
@@ -60,7 +60,7 @@ interface AttendanceDao {
         FROM attendance a
         INNER JOIN events e ON a.eventId = e.id
         GROUP BY e.id
-        ORDER BY e.date DESC
+        ORDER BY e.startDate DESC
         """
     )
     suspend fun getAttendanceHistory(): List<Summary>
