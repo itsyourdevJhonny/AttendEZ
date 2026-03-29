@@ -3,10 +3,12 @@ package com.project.attendez.data.local.entity
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(
     tableName = "attendance",
-    primaryKeys = ["eventId", "attendeeId"],
+    primaryKeys = ["eventId", "attendeeId", "date"],
     foreignKeys = [
         ForeignKey(
             entity = EventEntity::class,
@@ -30,6 +32,7 @@ data class AttendanceEntity(
     val eventId: Long,
     val attendeeId: Long,
     val status: AttendanceStatus,
+    val date: LocalDateTime = LocalDateTime.now(),
     val markedAt: Long = System.currentTimeMillis()
 )
 
