@@ -22,6 +22,7 @@ import com.project.attendez.ui.screens.AttendanceScreen
 import com.project.attendez.ui.screens.AttendeeScreen
 import com.project.attendez.ui.screens.EventScreen
 import com.project.attendez.ui.screens.HistoryScreen
+import com.project.attendez.ui.screens.MakeAttendanceScreen
 import com.project.attendez.ui.theme.AttendEZTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -76,6 +77,7 @@ fun AppNavigation() {
             AttendeeScreen(
                 eventId,
                 onAttendance = { eventId, attendeeId -> navController.navigate(Routes.Attendance.route + "/$eventId/$attendeeId") },
+                onMakeAttendance = { navController.navigate(Routes.MakeAttendance.route + "/$eventId") },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -95,6 +97,19 @@ fun AppNavigation() {
 
         composable(Routes.History.route) {
             HistoryScreen { navController.popBackStack() }
+        }
+
+        composable(
+            route = Routes.MakeAttendance.route + "/{eventId}",
+            arguments = listOf(navArgument("eventId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
+
+            MakeAttendanceScreen(
+                eventId,
+                onAttendance = { eventId, attendeeId -> navController.navigate(Routes.Attendance.route + "/$eventId/$attendeeId") },
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }
