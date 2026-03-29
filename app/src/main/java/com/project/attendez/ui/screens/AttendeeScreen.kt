@@ -87,7 +87,6 @@ import com.project.attendez.viewmodel.AttendanceUiState
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.AttendeeViewModel
 import com.project.attendez.viewmodel.EventViewModel
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
