@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 
 @Entity(
     tableName = "attendance",
-    primaryKeys = ["eventId", "attendeeId", "date"],
+    primaryKeys = ["eventId", "attendeeId"],
     foreignKeys = [
         ForeignKey(
             entity = EventEntity::class,
