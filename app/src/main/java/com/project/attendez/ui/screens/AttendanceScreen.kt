@@ -48,9 +48,7 @@ fun AttendanceScreen(eventId: Long, attendeeId: Long, onBack: () -> Unit) {
         attendeeViewModel.getAttendeeById(attendeeId)
     }.collectAsState(initial = null)
 
-    val attendance by remember(attendeeId) {
-        attendanceViewModel.getAttendanceByAttendee(eventId, attendeeId)
-    }.collectAsState()
+    val attendance by attendanceViewModel.getAttendanceByAttendee(eventId, attendeeId).collectAsState()
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
