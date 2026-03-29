@@ -18,7 +18,7 @@ import com.project.attendez.data.local.entity.EventEntity
         AttendeeEntity::class,
         AttendanceEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(LocalDateConverter::class, LocalDateTimeConverter::class)
