@@ -95,5 +95,16 @@ interface AttendanceDao {
         eventId: Long,
         date: LocalDateTime,
     ): List<AttendanceWithAttendeeRaw>
+
+    @Query(
+        """
+    SELECT attendeeId
+    FROM attendance
+    WHERE eventId = :eventId
+"""
+    )
+    suspend fun getExistingAttendeeIds(
+        eventId: Long,
+    ): List<Long>
 }
 
