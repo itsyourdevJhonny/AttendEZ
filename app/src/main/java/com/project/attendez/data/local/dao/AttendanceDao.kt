@@ -7,8 +7,12 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.util.AttendanceCount
+import com.project.attendez.data.local.util.AttendanceWithAttendeeRaw
 import com.project.attendez.data.local.util.Summary
+import com.project.attendez.data.local.util.TotalAttendance
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Dao
 interface AttendanceDao {
@@ -64,5 +68,32 @@ interface AttendanceDao {
         """
     )
     suspend fun getAttendanceHistory(): List<Summary>
+
+    @Query(
+        """
+    SELECT status, COUNT(*) as count
+    FROM attendance
+    WHERE eventId = :eventId AND date = :date
+    GROUP BY status
+"""
+    )
+    suspend fun getAttendanceSummary(
+        eventId: Long,
+        date: LocalDateTime,
+    ): List<TotalAttendance>
+
+    @Query(
+        """
+    SELECT * FROM attendance
+    INNER JOIN attendees 
+    ON attendance.attendeeId = attendees.id
+    WHERE attendance.eventId = :eventId 
+    AND attendance.date = :date
+"""
+    )
+    suspend fun getAttendanceWithAttendeesByDate(
+        eventId: Long,
+        date: LocalDateTime,
+    ): List<AttendanceWithAttendeeRaw>
 }
 
