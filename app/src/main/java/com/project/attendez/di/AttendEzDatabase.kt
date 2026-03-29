@@ -18,10 +18,10 @@ import com.project.attendez.data.local.entity.EventEntity
         AttendeeEntity::class,
         AttendanceEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = false
 )
-@TypeConverters(LocalDateConverter::class)
+@TypeConverters(LocalDateConverter::class, LocalDateTimeConverter::class)
 abstract class AttendEzDatabase : RoomDatabase() {
 
     abstract fun eventDao(): EventDao
