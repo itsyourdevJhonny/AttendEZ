@@ -10,8 +10,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -81,17 +81,27 @@ import com.project.attendez.ui.event.EmptyAttendance
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueTertiary
+import com.project.attendez.ui.theme.Typography
 import com.project.attendez.ui.util.AttendeeUtils
 import com.project.attendez.viewmodel.AttendanceUiState
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.AttendeeViewModel
 import com.project.attendez.viewmodel.EventViewModel
+import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AttendeeScreen(eventId: Long, onAttendance: (Long, Long) -> Unit, onBack: () -> Unit) {
+fun AttendeeScreen(
+    eventId: Long,
+    onAttendance: (Long, Long) -> Unit,
+    onMakeAttendance: () -> Unit,
+    onBack: () -> Unit,
+) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showExistingDialog by remember { mutableStateOf(false) }
     var showSearchDialog by rememberSaveable { mutableStateOf(false) }
@@ -114,7 +124,8 @@ fun AttendeeScreen(eventId: Long, onAttendance: (Long, Long) -> Unit, onBack: ()
                 onAttendance,
                 onExisting = { showExistingDialog = true },
                 onAdd = { showAddDialog = true },
-                onSearch = { showSearchDialog = true }
+                onSearch = { showSearchDialog = true },
+                onMakeAttendance
             )
         }
 
@@ -162,6 +173,7 @@ fun AttendeeContent(
     onExisting: () -> Unit,
     onAdd: () -> Unit,
     onSearch: () -> Unit,
+    onMakeAttendance: () -> Unit,
 ) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
@@ -179,12 +191,11 @@ fun AttendeeContent(
         val today = LocalDate.now()
         val hasAttendanceToday = event?.lastAttendanceDate == today
 
-        Column(
+        Box(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White),
-            verticalArrangement = Arrangement.SpaceBetween
+                .background(Color.White)
         ) {
             Column {
                 Header()
@@ -239,7 +250,7 @@ fun AttendeeContent(
                                         comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
                                             .thenBy { it.status == AttendanceStatus.EXCUSE }
                                             .thenBy { attendees[it.attendeeId]?.lowercase() }
-                                    )
+                                    ).distinctBy { it.attendeeId }
 
                                 LazyColumn(
                                     modifier = Modifier.fillMaxSize(),
@@ -255,8 +266,10 @@ fun AttendeeContent(
 
                                         attendee?.let { person ->
                                             AttendeeItem(
+                                                eventId = eventId,
                                                 attendee = person,
                                                 status = record.status,
+                                                attendanceViewModel = attendanceViewModel,
                                                 onClick = { onAttendance(eventId, person.id) }
                                             )
                                         }
@@ -268,16 +281,22 @@ fun AttendeeContent(
                 }
             }
 
-            MakeOrUpdateAttendanceButton(event, hasAttendanceToday, eventViewModel)
+            MakeOrUpdateAttendanceButton(
+                event,
+                hasAttendanceToday,
+                eventViewModel,
+                onMakeAttendance
+            )
         }
     }
 }
 
 @Composable
-private fun ColumnScope.MakeOrUpdateAttendanceButton(
+private fun BoxScope.MakeOrUpdateAttendanceButton(
     event: EventEntity?,
     hasAttendanceToday: Boolean,
     eventViewModel: EventViewModel,
+    onMakeAttendance: () -> Unit,
 ) {
     val totalDays = ChronoUnit.DAYS.between(event?.startDate, event?.endDate).toInt() + 1
 
@@ -295,6 +314,9 @@ private fun ColumnScope.MakeOrUpdateAttendanceButton(
         onClick = {
             if (!hasAttendanceToday) {
                 eventViewModel.updateEvent(event!!.copy(lastAttendanceDate = LocalDate.now()))
+                onMakeAttendance()
+            } else {
+                onMakeAttendance()
             }
         },
         colors = ButtonDefaults.textButtonColors(
@@ -302,7 +324,7 @@ private fun ColumnScope.MakeOrUpdateAttendanceButton(
             contentColor = Color.White
         ),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
-        modifier = Modifier.align(Alignment.CenterHorizontally)
+        modifier = Modifier.align(Alignment.BottomCenter)
     ) {
         Text(buttonText)
     }
@@ -540,11 +562,17 @@ private fun ActionBars(onExisting: () -> Unit, onAdd: () -> Unit) {
 
 @Composable
 fun LazyItemScope.AttendeeItem(
+    eventId: Long,
     attendee: AttendeeEntity,
     status: AttendanceStatus? = null,
     @DrawableRes trailingIcon: Int? = null,
+    attendanceViewModel: AttendanceViewModel,
     onClick: () -> Unit,
 ) {
+    val attendance by remember(attendee.id) {
+        attendanceViewModel.getAttendanceByAttendee(eventId = eventId, attendeeId = attendee.id)
+    }.collectAsState()
+
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(2.dp),
@@ -554,65 +582,112 @@ fun LazyItemScope.AttendeeItem(
         colors = CardDefaults.cardColors(containerColor = BlueTertiary),
         onClick = onClick
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Badge(
-                    modifier = Modifier.size(40.dp),
-                    contentColor = Color.White,
-                    containerColor = BluePrimary
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = attendee.fullName.first().toString().uppercase(),
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Badge(
+                        modifier = Modifier.size(40.dp),
+                        contentColor = Color.White,
+                        containerColor = BluePrimary
+                    ) {
+                        Text(
+                            text = attendee.fullName.first().toString().uppercase(),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+
+                    Column {
+                        Text(
+                            text = attendee.fullName,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            modifier = Modifier.widthIn(max = 216.dp)
+                        )
+
+                        Text(
+                            text = "${attendee.course} • ${AttendeeUtils.getYearLevel(attendee.yearLevel)} • ${attendee.studentId}",
+                            style = MaterialTheme.typography.bodySmall.copy(color = Color.White),
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            modifier = Modifier.widthIn(max = 236.dp)
+                        )
+                    }
                 }
 
-                Column {
-                    Text(
-                        text = attendee.fullName,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White,
-                        modifier = Modifier.widthIn(max = 216.dp)
+                if (status != null) {
+                    Image(
+                        painter = painterResource(
+                            when (status) {
+                                AttendanceStatus.PRESENT -> R.drawable.present_blue
+                                AttendanceStatus.ABSENT -> R.drawable.absent_red
+                                AttendanceStatus.EXCUSE -> R.drawable.excuse
+                            }
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp)
                     )
-
-                    Text(
-                        text = "${attendee.course} • ${AttendeeUtils.getYearLevel(attendee.yearLevel)} • ${attendee.studentId}",
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.White),
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 1,
-                        modifier = Modifier.widthIn(max = 236.dp)
-                    )
+                } else {
+                    trailingIcon?.let { icon ->
+                        Image(
+                            painter = painterResource(icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
 
-            if (status != null) {
-                Image(
-                    painter = painterResource(
-                        when (status) {
-                            AttendanceStatus.PRESENT -> R.drawable.present_blue
-                            AttendanceStatus.ABSENT -> R.drawable.absent_red
-                            AttendanceStatus.EXCUSE -> R.drawable.excuse
-                        }
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp)
-                )
-            } else {
-                trailingIcon?.let { icon ->
-                    Image(
-                        painter = painterResource(icon),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
+            HorizontalDivider(
+                color = Color.White,
+                thickness = 0.5.dp,
+                modifier = Modifier.padding(vertical = 12.dp)
+            )
+
+            val formatter = DateTimeFormatter
+                .ofPattern("yyyy/dd/MM hh:mm:ss a")
+                .withLocale(Locale.US)
+                .withZone(ZoneId.of("Asia/Manila"))
+
+            if (status == AttendanceStatus.PRESENT) {
+                attendance?.let {
+                    Row(
+                        modifier = Modifier.padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.time),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Text(
+                            text = "Attended on ",
+                            color = Color.White,
+                            style = Typography.bodyMedium
+                        )
+
+                        Text(
+                            text = it.date.format(formatter),
+                            style = Typography.bodyMedium.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Black
+                            )
+                        )
+                    }
                 }
             }
         }
