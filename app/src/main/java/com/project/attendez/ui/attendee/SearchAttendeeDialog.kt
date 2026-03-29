@@ -165,7 +165,9 @@ private fun SearchAttendeeContent(
 
                             attendee?.let { person ->
                                 AttendeeItem(
+                                    eventId = eventId,
                                     attendee = person,
+                                    attendanceViewModel = attendanceViewModel,
                                     onClick = { onAttendance(eventId, person.id) }
                                 )
                             }
