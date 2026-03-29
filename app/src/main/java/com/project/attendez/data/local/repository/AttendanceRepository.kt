@@ -8,10 +8,9 @@ import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.util.AttendanceWithAttendee
-import com.project.attendez.data.local.util.AttendanceWithAttendeeRaw
 import com.project.attendez.viewmodel.DailyStats
 import kotlinx.coroutines.flow.Flow
-import java.time.LocalDate
+import kotlinx.coroutines.flow.first
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
@@ -28,7 +27,6 @@ class AttendanceRepository @Inject constructor(
         eventId: Long,
         attendeeId: Long,
         status: AttendanceStatus,
-        date: LocalDate = LocalDate.now(),
     ) {
         attendanceDao.mark(
             AttendanceEntity(
@@ -135,6 +133,14 @@ class AttendanceRepository @Inject constructor(
 
         return getDailyAttendanceList(eventId, date)
             .groupBy { it.attendance.status }
+    }
+
+    suspend fun getExistingAttendeeIds(eventId: Long) = attendanceDao.getExistingAttendeeIds(eventId)
+
+    suspend fun getAttendeeMap(): Map<String, Long> {
+        return attendeeDao.getAll()
+            .first()
+            .associate { it.studentId to it.id }
     }
 }
 
