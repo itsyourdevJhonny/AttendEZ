@@ -6,12 +6,19 @@ import com.project.attendez.data.local.dao.AttendeeDao
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
+import com.project.attendez.data.local.entity.EventEntity
+import com.project.attendez.data.local.util.AttendanceWithAttendee
+import com.project.attendez.data.local.util.AttendanceWithAttendeeRaw
+import com.project.attendez.viewmodel.DailyStats
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 class AttendanceRepository @Inject constructor(
     private val attendanceDao: AttendanceDao,
-    private val attendeeDao: AttendeeDao
+    private val attendeeDao: AttendeeDao,
 ) {
 
     fun getAttendance(eventId: Long): Flow<List<AttendanceEntity>> =
@@ -20,7 +27,8 @@ class AttendanceRepository @Inject constructor(
     suspend fun mark(
         eventId: Long,
         attendeeId: Long,
-        status: AttendanceStatus
+        status: AttendanceStatus,
+        date: LocalDate = LocalDate.now(),
     ) {
         attendanceDao.mark(
             AttendanceEntity(
@@ -47,7 +55,7 @@ class AttendanceRepository @Inject constructor(
         fullName: String,
         course: String?,
         yearLevel: Int?,
-        status: AttendanceStatus
+        status: AttendanceStatus,
     ): AddAttendeeResult {
         val existing = attendeeDao.getByStudentIdOnce(studentId)
 
@@ -66,6 +74,68 @@ class AttendanceRepository @Inject constructor(
     }
 
     suspend fun getAttendanceHistory() = attendanceDao.getAttendanceHistory()
+
+    suspend fun getDailyStats(eventId: Long, date: LocalDateTime): DailyStats {
+        val result = attendanceDao.getAttendanceSummary(eventId, date)
+
+        var present = 0
+        var absent = 0
+        var excuse = 0
+
+        result.forEach {
+            when (it.status) {
+                AttendanceStatus.PRESENT -> present = it.count
+                AttendanceStatus.ABSENT -> absent = it.count
+                AttendanceStatus.EXCUSE -> excuse = it.count
+            }
+        }
+
+        return DailyStats(present, absent, excuse)
+    }
+
+    suspend fun getAllDaysStats(event: EventEntity): List<Pair<LocalDateTime, DailyStats>> {
+        val days = ChronoUnit.DAYS.between(event.startDate, event.endDate).toInt()
+
+        return (0..days).map { offset ->
+            val date = event.startDate.plusDays(offset.toLong()).atStartOfDay()
+            val stats = getDailyStats(event.id, date)
+            date to stats
+        }
+    }
+
+    suspend fun getDailyAttendanceList(
+        eventId: Long,
+        date: LocalDateTime,
+    ): List<AttendanceWithAttendee> {
+
+        return attendanceDao.getAttendanceWithAttendeesByDate(eventId, date)
+            .map {
+                AttendanceWithAttendee(
+                    attendance = AttendanceEntity(
+                        eventId = it.eventId,
+                        attendeeId = it.attendeeId,
+                        status = it.status,
+                        markedAt = it.markedAt
+                    ),
+                    attendee = AttendeeEntity(
+                        id = it.id,
+                        studentId = it.studentId,
+                        fullName = it.fullName,
+                        course = it.course,
+                        yearLevel = it.yearLevel
+                    )
+                )
+            }
+    }
+
+    suspend fun getDailyGroupedAttendance(
+        eventId: Long,
+        date: LocalDateTime
+    ): Map<AttendanceStatus, List<AttendanceWithAttendee>> {
+
+        return getDailyAttendanceList(eventId, date)
+            .groupBy { it.attendance.status }
+    }
 }
 
 sealed class AddAttendeeResult {
