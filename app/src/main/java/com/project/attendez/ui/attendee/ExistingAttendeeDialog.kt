@@ -74,6 +74,7 @@ import com.project.attendez.ui.util.drawGradient
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.ExistingAttendeeUiState
 import com.project.attendez.viewmodel.ExistingAttendeeViewModel
+import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
