@@ -4,8 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendanceStatus
+import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.data.local.repository.AttendanceRepository
+import com.project.attendez.data.local.util.AttendanceWithAttendee
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,11 +15,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class AttendanceViewModel @Inject constructor(
-    private val repository: AttendanceRepository
+    private val repository: AttendanceRepository,
 ) : ViewModel() {
     private val _uiState =
         MutableStateFlow<AttendanceUiState>(AttendanceUiState.Loading)
@@ -47,7 +51,7 @@ class AttendanceViewModel @Inject constructor(
 
     fun getAttendanceByAttendee(
         eventId: Long,
-        attendeeId: Long
+        attendeeId: Long,
     ): StateFlow<AttendanceEntity?> =
         repository.getAttendanceByAttendee(eventId, attendeeId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -55,7 +59,7 @@ class AttendanceViewModel @Inject constructor(
     fun updateAttendanceStatus(
         eventId: Long,
         attendeeId: Long,
-        status: AttendanceStatus
+        status: AttendanceStatus,
     ) {
         viewModelScope.launch { repository.mark(eventId, attendeeId, status) }
     }
@@ -75,7 +79,7 @@ class AttendanceViewModel @Inject constructor(
         course: String,
         yearLevel: Int,
         status: AttendanceStatus,
-        onResult: (AddAttendeeResult) -> Unit
+        onResult: (AddAttendeeResult) -> Unit,
     ) {
         viewModelScope.launch {
             val result = repository.addAttendeeAndMarkAttendance(
@@ -89,7 +93,25 @@ class AttendanceViewModel @Inject constructor(
             onResult(result)
         }
     }
+
+    suspend fun getDailyStats(eventId: Long, date: LocalDateTime): DailyStats =
+        repository.getDailyStats(eventId, date)
+
+    suspend fun getAllDaysStats(event: EventEntity): List<Pair<LocalDateTime, DailyStats>> =
+        repository.getAllDaysStats(event)
+
+    suspend fun getDailyGroupedAttendance(
+        eventId: Long,
+        date: LocalDateTime,
+    ): Map<AttendanceStatus, List<AttendanceWithAttendee>> =
+        repository.getDailyGroupedAttendance(eventId, date)
 }
+
+data class DailyStats(
+    val present: Int,
+    val absent: Int,
+    val excuse: Int,
+)
 
 sealed interface AttendanceUiState {
     object Loading : AttendanceUiState
