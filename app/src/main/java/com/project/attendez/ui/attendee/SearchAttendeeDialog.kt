@@ -48,6 +48,7 @@ import com.project.attendez.ui.util.AttendeeUtils
 import com.project.attendez.viewmodel.AttendanceUiState
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.AttendeeViewModel
+import com.project.attendez.viewmodel.EventViewModel
 
 @Composable
 fun SearchAttendeeDialog(
@@ -94,8 +95,11 @@ private fun SearchAttendeeContent(
 ) {
     val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
     val attendanceViewModel = hiltViewModel<AttendanceViewModel>()
+    val eventViewModel = hiltViewModel<EventViewModel>()
 
     val uiState by attendanceViewModel.uiState.collectAsState()
+
+    val event by eventViewModel.getEventById(eventId).collectAsState(initial = null)
 
     LaunchedEffect(Unit) { attendanceViewModel.loadEventAttendance(eventId) }
 
