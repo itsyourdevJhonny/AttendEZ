@@ -78,7 +78,7 @@ import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.util.DailyAttendanceRaw
 import com.project.attendez.extension.isEnded
 import com.project.attendez.ui.attendee.AddAttendeeDialog
-import com.project.attendez.ui.attendee.AttendanceBarChartList
+import com.project.attendez.ui.attendee.AttendanceAnalyticsContent
 import com.project.attendez.ui.attendee.ErrorState
 import com.project.attendez.ui.attendee.ExistingAttendeeDialog
 import com.project.attendez.ui.attendee.LoadingState
@@ -231,6 +231,8 @@ fun AttendeeContent(
                 HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(bottom = 8.dp))
 
                 AttendeeHeader(
+                    event,
+                    isEnded = isEventEnded,
                     attendanceSize = attendance.size,
                     attendance,
                     attendanceViewModel,
@@ -307,7 +309,7 @@ fun AttendeeContent(
                             data = attendanceViewModel.getDailyAttendanceSummary(eventId)
                         }
 
-                        AttendanceBarChartList(mapToDailyUI(data))
+                        AttendanceAnalyticsContent(mapToDailyUI(data)) { _, _ -> }
                     }
                 }
             }
@@ -444,6 +446,8 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AttendeeHeader(
+    event: EventEntity?,
+    isEnded: Boolean,
     attendanceSize: Int,
     attendance: List<AttendanceEntity>,
     attendanceViewModel: AttendanceViewModel,
@@ -467,39 +471,48 @@ private fun AttendeeHeader(
             modifier = Modifier.animateContentSize()
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.animateContentSize()
-        ) {
-            IconButton(
-                onClick = onSearch,
-                colors = IconButtonDefaults.iconButtonColors(
-                    containerColor = BluePrimary,
-                    contentColor = Color.White
-                )
+        if (!isEnded) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.animateContentSize()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null
-                )
-            }
-
-            AnimatedVisibility(visible = attendance.size > 1) {
-                TextButton(
-                    onClick = { confirmRemoveAll = true },
-                    colors = ButtonDefaults.textButtonColors(
-                        containerColor = Color.Red,
+                IconButton(
+                    onClick = onSearch,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = BluePrimary,
                         contentColor = Color.White
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null
                     )
-
-                    Text(text = " Remove All")
                 }
+
+                AnimatedVisibility(visible = attendance.size > 1) {
+                    TextButton(
+                        onClick = { confirmRemoveAll = true },
+                        colors = ButtonDefaults.textButtonColors(
+                            containerColor = Color.Red,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+
+                        Text(text = " Remove All")
+                    }
+                }
+            }
+        } else {
+            val totalDays = ChronoUnit.DAYS.between(event?.startDate, event?.endDate) + 1
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Total Days: ", color = Color.Black)
+                Text(text = "$totalDays", color = Color.Black, fontWeight = FontWeight.Black)
             }
         }
     }
