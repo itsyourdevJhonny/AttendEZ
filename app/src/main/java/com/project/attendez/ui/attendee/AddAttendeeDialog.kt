@@ -26,9 +26,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -40,7 +42,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceStatus
@@ -61,8 +66,10 @@ import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueSecondary
+import com.project.attendez.ui.theme.BlueTertiary
 import com.project.attendez.ui.util.drawGradient
 import com.project.attendez.viewmodel.AttendanceViewModel
+import com.project.attendez.viewmodel.AttendeeViewModel
 
 @Composable
 fun AddAttendeeDialog(eventId: Long, onDismiss: () -> Unit) {
@@ -178,8 +185,15 @@ private fun AddAttendeeButton(
     isPresent: Boolean,
     onDismiss: () -> Unit,
     isLoading: Boolean,
-    onLoading: (Boolean) -> Unit
+    onLoading: (Boolean) -> Unit,
 ) {
+    val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
+
+    val attendee by attendeeViewModel.getAttendeeByStudentId(studentId)
+        .collectAsState(initial = null)
+
+    var showUseExistingAttendeeDialog by remember { mutableStateOf(false) }
+
     Button(
         onClick = {
             if (!isValid) {
@@ -187,29 +201,30 @@ private fun AddAttendeeButton(
                 return@Button
             }
 
+            if (attendee != null) {
+                Toast.makeText(
+                    context, "Attendee already exists with the entered Student ID",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                showUseExistingAttendeeDialog = true
+                return@Button
+            }
+
             onLoading(true)
 
-            attendanceViewModel.addAttendeeToEvent(
+            addAttendeeToEvent(
+                attendanceViewModel,
                 eventId,
                 studentId,
                 fullName,
                 course,
                 yearLevel,
-                status = if (isPresent) AttendanceStatus.PRESENT else AttendanceStatus.ABSENT
-            ) { result ->
-                onLoading(false)
-
-                Toast.makeText(
-                    context,
-                    when (result) {
-                        AddAttendeeResult.New -> "Student added successfully."
-                        AddAttendeeResult.Existing -> "Student already exists. Added to event."
-                    },
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                onDismiss()
-            }
+                isPresent,
+                onLoading,
+                context,
+                onDismiss
+            )
         },
         enabled = isValid && !isLoading,
         modifier = Modifier
@@ -236,6 +251,113 @@ private fun AddAttendeeButton(
             Text(text = "Add Attendee")
         }
     }
+
+    if (showUseExistingAttendeeDialog) {
+        UseExistingAttendeeDialog(
+            onConfirm = {
+                addAttendeeToEvent(
+                    attendanceViewModel,
+                    eventId,
+                    studentId,
+                    fullName,
+                    course,
+                    yearLevel,
+                    isPresent,
+                    onLoading,
+                    context,
+                    onDismiss
+                )
+
+                onDismiss()
+            },
+            onDismiss = { showUseExistingAttendeeDialog = false }
+        )
+    }
+}
+
+private fun addAttendeeToEvent(
+    attendanceViewModel: AttendanceViewModel,
+    eventId: Long,
+    studentId: String,
+    fullName: String,
+    course: String,
+    yearLevel: Int,
+    isPresent: Boolean,
+    onLoading: (Boolean) -> Unit,
+    context: Context,
+    onDismiss: () -> Unit,
+) {
+    attendanceViewModel.addAttendeeToEvent(
+        eventId,
+        studentId,
+        fullName,
+        course,
+        yearLevel,
+        status = if (isPresent) AttendanceStatus.PRESENT else AttendanceStatus.ABSENT
+    ) { result ->
+        onLoading(false)
+
+        Toast.makeText(
+            context,
+            when (result) {
+                AddAttendeeResult.New -> "Student added successfully."
+                AddAttendeeResult.Existing -> "Student already exists. Added to event."
+            },
+            Toast.LENGTH_SHORT
+        ).show()
+
+        onDismiss()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UseExistingAttendeeDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = BlueSecondary,
+        icon = {
+            Icon(
+                painter = painterResource(R.drawable.attendance_name),
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(text = "Attendee Found", color = Color.White)
+        },
+        text = {
+            Text(
+                text = "This attendee already exists in the system. Do you want to use the existing record instead of creating a new one?",
+                color = Color.White
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BluePrimary,
+                    contentColor = Color.White
+                )
+            ) {
+                Text(text = "Use Existing")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color.White
+                )
+            ) {
+                Text(text = "Create New")
+            }
+        }
+    )
 }
 
 @Composable
@@ -279,7 +401,7 @@ fun InputFields(
     course: String,
     onStudentIdChange: (String) -> Unit,
     onFullNameChange: (String) -> Unit,
-    onCourseChange: (String) -> Unit
+    onCourseChange: (String) -> Unit,
 ) {
     listOf(
         "Student ID" to R.drawable.student_id,
