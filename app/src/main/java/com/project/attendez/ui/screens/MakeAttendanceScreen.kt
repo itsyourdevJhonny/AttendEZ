@@ -85,13 +85,10 @@ fun MakeAttendanceScreen(
 
     val previewList by attendanceViewModel.previewList.collectAsState()
 
-    val attendees by attendeeViewModel
-        .getAttendeesByEventId(eventId)
+    val attendees by attendeeViewModel.getAttendeesByEventIdAndDate(eventId)
         .collectAsState(initial = emptyList())
 
-    val attendanceList by attendanceViewModel
-        .attendance(eventId)
-        .collectAsState(initial = emptyList())
+    val attendanceList by attendanceViewModel.getAttendanceByEventAndDate(eventId).collectAsState()
 
     var sortType by remember { mutableStateOf(SortType.NAME) }
     var status by remember { mutableStateOf<AttendanceStatus?>(null) }
@@ -150,6 +147,8 @@ fun MakeAttendanceScreen(
                     )
 
                     ImportBulkButton(launcher)
+
+                    HorizontalDivider(color = Color.White, thickness = 0.5.dp)
 
                     Row(
                         modifier = Modifier
