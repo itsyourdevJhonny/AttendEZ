@@ -10,6 +10,7 @@ import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.repository.AddAttendeeResult
 import com.project.attendez.data.local.repository.AttendanceRepository
 import com.project.attendez.data.local.util.AttendanceWithAttendee
+import com.project.attendez.data.local.util.DailyAttendanceRaw
 import com.project.attendez.ui.util.BulkImportUtils.parseExcel
 import com.project.attendez.ui.util.ImportPreview
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -103,7 +104,8 @@ class AttendanceViewModel @Inject constructor(
                 val now = LocalDateTime.now()
                 val startOfDay = now.toLocalDate().atStartOfDay()
                 val endOfDay = now.toLocalDate().atTime(23, 59, 59)
-                val attendees = repository.getAttendanceByEventAndDate(eventId, startOfDay, endOfDay).first()
+                val attendees =
+                    repository.getAttendanceByEventAndDate(eventId, startOfDay, endOfDay).first()
                 _uiState.value = AttendanceUiState.Success(attendees)
             } catch (e: Exception) {
                 _uiState.value = AttendanceUiState.Error(
@@ -187,6 +189,9 @@ class AttendanceViewModel @Inject constructor(
         date: LocalDateTime,
     ): Map<AttendanceStatus, List<AttendanceWithAttendee>> =
         repository.getDailyGroupedAttendance(eventId, date)
+
+    suspend fun getDailyAttendanceSummary(eventId: Long) =
+        repository.getDailyAttendanceSummary(eventId)
 }
 
 data class DailyStats(
