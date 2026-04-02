@@ -26,6 +26,17 @@ interface AttendanceDao {
     @Query("SELECT * FROM attendance WHERE eventId = :eventId")
     fun getByEvent(eventId: Long): Flow<List<AttendanceEntity>>
 
+    @Query("""
+    SELECT * FROM attendance 
+    WHERE eventId = :eventId 
+    AND date BETWEEN :startOfDay AND :endOfDay
+""")
+    fun getByEventAndDate(
+        eventId: Long,
+        startOfDay: LocalDateTime,
+        endOfDay: LocalDateTime
+    ): Flow<List<AttendanceEntity>>
+
     @Query("SELECT * FROM attendance WHERE eventId = :eventId AND attendeeId = :attendeeId")
     fun getByEventAndAttendee(eventId: Long, attendeeId: Long): Flow<AttendanceEntity?>
 
