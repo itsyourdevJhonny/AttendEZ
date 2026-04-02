@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.data.local.entity.EventEntity
+import com.project.attendez.extension.isEnded
+import com.project.attendez.extension.isOngoing
+import com.project.attendez.extension.upcoming
 import com.project.attendez.ui.event.CreateEventDialog
 import com.project.attendez.ui.event.EventContent
 import com.project.attendez.ui.event.EventHeader
@@ -38,11 +41,17 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
     var showDeleteSheet by remember { mutableStateOf(false) }
 
     val today = LocalDate.now()
-    val ongoingEvents = events.filter { it.startDate >= today }.sortedByDescending { it.createdAt }
-    val pastEvents = events.filter { it.startDate < today }
 
-    val filteredEvents = (if (selectedTabIndex == 0) ongoingEvents else pastEvents)
-        .filter { it.name.contains(searchQuery, ignoreCase = true) }
+    val ongoingEvents = events.filter { it.isOngoing(today) }
+    val pastEvents = events.filter { it.isEnded(today) }
+
+    val upcomingEvents = events.filter { it.upcoming(today) }
+
+    val filteredEvents = (when (selectedTabIndex) {
+        0 -> ongoingEvents
+        1 -> pastEvents
+        else -> events
+    }).filter { it.name.contains(searchQuery, ignoreCase = true) }
 
     Box {
         Scaffold(
@@ -55,6 +64,7 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
                 eventViewModel,
                 selectedTabIndex,
                 ongoingEvents,
+                upcomingEvents,
                 pastEvents,
                 filteredEvents,
                 selectedEvent,
