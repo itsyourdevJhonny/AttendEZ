@@ -75,13 +75,16 @@ import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.data.local.entity.EventEntity
+import com.project.attendez.data.local.util.DailyAttendanceRaw
+import com.project.attendez.extension.isEnded
 import com.project.attendez.ui.attendee.AddAttendeeDialog
+import com.project.attendez.ui.attendee.AttendanceBarChartList
 import com.project.attendez.ui.attendee.ErrorState
 import com.project.attendez.ui.attendee.ExistingAttendeeDialog
 import com.project.attendez.ui.attendee.LoadingState
 import com.project.attendez.ui.attendee.SearchAttendeeDialog
+import com.project.attendez.ui.attendee.mapToDailyUI
 import com.project.attendez.ui.event.EmptyAttendance
-import com.project.attendez.ui.theme.BackgroundGradient
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueTertiary
 import com.project.attendez.ui.theme.Typography
@@ -195,6 +198,8 @@ fun AttendeeContent(
 
         val eventColor = Color(event!!.color.toColorInt())
 
+        val isEventEnded = event!!.isEnded(today)
+
         Box(
             modifier = Modifier
                 .padding(paddingValues)
@@ -234,74 +239,87 @@ fun AttendeeContent(
 
                 HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(top = 8.dp))
 
-                if (hasAttendanceToday) {
+                when {
+                    hasAttendanceToday && !isEventEnded -> {
+                        when (uiState) {
+                            AttendanceUiState.Loading -> LoadingState()
 
-                    when (uiState) {
-                        AttendanceUiState.Loading -> LoadingState()
+                            is AttendanceUiState.Error -> {
+                                ErrorState(
+                                    message = (uiState as AttendanceUiState.Error).message,
+                                    onRetry = { /*attendanceViewModel.loadEventAttendance(eventId)*/ }
+                                )
+                            }
 
-                        is AttendanceUiState.Error -> {
-                            ErrorState(
-                                message = (uiState as AttendanceUiState.Error).message,
-                                onRetry = { /*attendanceViewModel.loadEventAttendance(eventId)*/ }
-                            )
-                        }
+                            is AttendanceUiState.Success -> {
+                                val attendance = (uiState as AttendanceUiState.Success).attendance
 
-                        is AttendanceUiState.Success -> {
-                            val attendance = (uiState as AttendanceUiState.Success).attendance
+                                if (attendance.isEmpty()) {
+                                    Box(modifier = Modifier.padding(top = 32.dp)) {
+                                        EmptyAttendance(
+                                            label = "No attendees yet.\nAdd students to start tracking attendance.",
+                                            isFullSize = false
+                                        )
+                                    }
+                                } else {
+                                    val attendees = attendeeViewModel.getAttendeesByEventId(eventId)
+                                        .collectAsState(initial = emptyList()).value.associate { it?.id to it?.fullName }
 
-                            if (attendance.isEmpty()) {
-                                Box(modifier = Modifier.padding(top = 32.dp)) {
-                                    EmptyAttendance(
-                                        label = "No attendees yet.\nAdd students to start tracking attendance.",
-                                        isFullSize = false
-                                    )
-                                }
-                            } else {
-                                val attendees = attendeeViewModel.getAttendeesByEventId(eventId)
-                                    .collectAsState(initial = emptyList()).value.associate { it?.id to it?.fullName }
+                                    val sortedAttendance = attendance
+                                        .sortedWith(
+                                            comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
+                                                .thenBy { it.status == AttendanceStatus.EXCUSE }
+                                                .thenBy { attendees[it.attendeeId]?.lowercase() }
+                                        ).distinctBy { it.attendeeId }
 
-                                val sortedAttendance = attendance
-                                    .sortedWith(
-                                        comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
-                                            .thenBy { it.status == AttendanceStatus.EXCUSE }
-                                            .thenBy { attendees[it.attendeeId]?.lowercase() }
-                                    ).distinctBy { it.attendeeId }
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        items(
+                                            items = sortedAttendance,
+                                            key = { it.attendeeId }) { record ->
+                                            val attendee by remember(record.attendeeId) {
+                                                attendeeViewModel.getAttendeeById(record.attendeeId)
+                                            }.collectAsState(initial = null)
 
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    items(
-                                        items = sortedAttendance,
-                                        key = { it.attendeeId }) { record ->
-                                        val attendee by remember(record.attendeeId) {
-                                            attendeeViewModel.getAttendeeById(record.attendeeId)
-                                        }.collectAsState(initial = null)
-
-                                        attendee?.let { person ->
-                                            AttendeeItem(
-                                                eventId = eventId,
-                                                attendee = person,
-                                                status = record.status,
-                                                attendanceViewModel = attendanceViewModel,
-                                                onClick = { onAttendance(eventId, person.id) }
-                                            )
+                                            attendee?.let { person ->
+                                                AttendeeItem(
+                                                    eventId = eventId,
+                                                    attendee = person,
+                                                    status = record.status,
+                                                    attendanceViewModel = attendanceViewModel,
+                                                    onClick = { onAttendance(eventId, person.id) }
+                                                )
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+
+                    isEventEnded -> {
+                        var data by remember { mutableStateOf<List<DailyAttendanceRaw>>(emptyList()) }
+
+                        LaunchedEffect(Unit) {
+                            data = attendanceViewModel.getDailyAttendanceSummary(eventId)
+                        }
+
+                        AttendanceBarChartList(mapToDailyUI(data))
+                    }
                 }
             }
 
-            MakeOrUpdateAttendanceButton(
-                event,
-                hasAttendanceToday,
-                eventViewModel,
-                onMakeAttendance
-            )
+            if (!isEventEnded) {
+                MakeOrUpdateAttendanceButton(
+                    event,
+                    hasAttendanceToday,
+                    eventViewModel,
+                    onMakeAttendance
+                )
+            }
         }
     }
 }
@@ -364,7 +382,8 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
 
     event?.let {
         val eventColor = Color(event!!.color.toColorInt())
-        val textColor = if (eventColor.copy(alpha = 0.6f).luminance() < 0.5f) Color.White else Color.Black
+        val textColor =
+            if (eventColor.copy(alpha = 0.6f).luminance() < 0.5f) Color.White else Color.Black
 
         Card(
             modifier = Modifier
