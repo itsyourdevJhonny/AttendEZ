@@ -54,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.EventEntity
@@ -126,7 +127,11 @@ fun EventContent(
                 onSearching = onSearching
             )
 
-            AnimatedVisibility(visible = (selectedTabIndex == 0 && ongoingEvents.isEmpty()) || (selectedTabIndex == 1 && pastEvents.isEmpty())) {
+            AnimatedVisibility(
+                visible = (selectedTabIndex == 0 && ongoingEvents.isEmpty()) ||
+                        (selectedTabIndex == 1 && upcomingEvents.isEmpty()) ||
+                        (selectedTabIndex == 2 && pastEvents.isEmpty())
+            ) {
                 EmptyAttendance(
                     label = "There are no ${
                         when (selectedTabIndex) {
@@ -302,7 +307,11 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
             .padding(horizontal = 16.dp)
             .clip(CircleShape)
     ) {
-        listOf("Ongoing" to R.drawable.ongoing, "Upcoming" to R.drawable.upcoming, "Past" to R.drawable.past)
+        listOf(
+            "Ongoing" to R.drawable.ongoing,
+            "Upcoming" to R.drawable.upcoming,
+            "Past" to R.drawable.past
+        )
             .forEachIndexed { index, (label, icon) ->
                 Row(
                     modifier = Modifier
@@ -318,7 +327,12 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
                         modifier = Modifier.size(28.dp)
                     )
 
-                    Text(text = " $label", color = BluePrimary, fontWeight = FontWeight.Black)
+                    Text(
+                        text = " $label",
+                        color = BluePrimary,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 12.sp
+                    )
                 }
             }
     }
