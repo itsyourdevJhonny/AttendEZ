@@ -8,6 +8,7 @@ import androidx.room.Query
 import com.project.attendez.data.local.entity.AttendanceEntity
 import com.project.attendez.data.local.util.AttendanceCount
 import com.project.attendez.data.local.util.AttendanceWithAttendeeRaw
+import com.project.attendez.data.local.util.DailyAttendanceRaw
 import com.project.attendez.data.local.util.Summary
 import com.project.attendez.data.local.util.TotalAttendance
 import kotlinx.coroutines.flow.Flow
@@ -117,5 +118,19 @@ interface AttendanceDao {
     suspend fun getExistingAttendeeIds(
         eventId: Long,
     ): List<Long>
+
+    @Query("""
+    SELECT 
+        DATE(date) as day,
+        status,
+        COUNT(*) as count
+    FROM attendance
+    WHERE eventId = :eventId
+    GROUP BY day, status
+    ORDER BY day ASC
+""")
+    suspend fun getDailyAttendanceSummary(
+        eventId: Long
+    ): List<DailyAttendanceRaw>
 }
 
