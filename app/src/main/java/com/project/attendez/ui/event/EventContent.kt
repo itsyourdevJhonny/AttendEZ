@@ -62,6 +62,7 @@ import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.Typography
 import com.project.attendez.ui.util.drawGradient
 import com.project.attendez.viewmodel.EventViewModel
+import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,6 +72,7 @@ fun EventContent(
     eventViewModel: EventViewModel,
     selectedTabIndex: Int,
     ongoingEvents: List<EventEntity>,
+    upcomingEvents: List<EventEntity>,
     pastEvents: List<EventEntity>,
     filteredEvents: List<EventEntity>,
     selectedEvent: EventEntity?,
@@ -119,12 +121,21 @@ fun EventContent(
             EventsHeader(
                 selectedTabIndex = selectedTabIndex,
                 totalOngoing = ongoingEvents.size,
+                totalUpcoming = upcomingEvents.size,
                 totalPast = pastEvents.size,
                 onSearching = onSearching
             )
 
             AnimatedVisibility(visible = (selectedTabIndex == 0 && ongoingEvents.isEmpty()) || (selectedTabIndex == 1 && pastEvents.isEmpty())) {
-                EmptyAttendance(label = "There are no ${if (selectedTabIndex == 0) "ongoing" else "past"} events available at this time.")
+                EmptyAttendance(
+                    label = "There are no ${
+                        when (selectedTabIndex) {
+                            0 -> "ongoing"
+                            1 -> "upcoming"
+                            else -> "past"
+                        }
+                    } events available at this time."
+                )
             }
 
             when {
@@ -215,12 +226,20 @@ fun EmptyAttendance(
 private fun EventsHeader(
     selectedTabIndex: Int,
     totalOngoing: Int,
+    totalUpcoming: Int,
     totalPast: Int,
     onSearching: (Boolean) -> Unit,
 ) {
-
-    val prefix = if (selectedTabIndex == 0) "Ongoing" else "Past"
-    val count = if (selectedTabIndex == 0) totalOngoing else totalPast
+    val prefix = when (selectedTabIndex) {
+        0 -> "Ongoing"
+        1 -> "Upcoming"
+        else -> "Past"
+    }
+    val count = when (selectedTabIndex) {
+        0 -> totalOngoing
+        1 -> totalUpcoming
+        else -> totalPast
+    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -247,23 +266,6 @@ private fun EventsHeader(
 
 @Composable
 private fun CreateAction(label: String, @DrawableRes iconRes: Int, onClick: () -> Unit) {
-    /*Column(
-        modifier = Modifier
-            .clickable { onClick() }
-            .width(100.dp)
-            .background(Color.White, CircleShape)
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(iconRes),
-            contentDescription = label,
-            modifier = Modifier.size(38.dp)
-        )
-
-        Text(text = label, color = Color.Black, fontWeight = FontWeight.Bold)
-    }*/
-
     Button(
         onClick = onClick,
         shape = CircleShape,
@@ -300,7 +302,7 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
             .padding(horizontal = 16.dp)
             .clip(CircleShape)
     ) {
-        listOf("Ongoing" to R.drawable.ongoing, "Past" to R.drawable.past)
+        listOf("Ongoing" to R.drawable.ongoing, "Upcoming" to R.drawable.upcoming, "Past" to R.drawable.past)
             .forEachIndexed { index, (label, icon) ->
                 Row(
                     modifier = Modifier
@@ -393,14 +395,27 @@ fun LazyItemScope.EventItem(
 
 @Composable
 fun EventStatus(event: EventEntity) {
+    val today = LocalDate.now()
 
-    val started = event.lastAttendanceDate != null
+    val status = when {
+        today.isAfter(event.endDate) -> "Ended"
+        today.isBefore(event.startDate) -> "Upcoming"
+        else -> "Ongoing"
+    }
+
+    val color = when (status) {
+        "Ended" -> Color.Gray
+        "Upcoming" -> Color.Yellow
+        else -> Color.Green
+    }
+
+    val shouldAnimate = status == "Ongoing"
 
     val infiniteTransition = rememberInfiniteTransition(label = "")
 
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (started) 1.4f else 1f,
+        targetValue = if (shouldAnimate) 1.4f else 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(800),
             repeatMode = RepeatMode.Reverse
@@ -410,7 +425,7 @@ fun EventStatus(event: EventEntity) {
 
     val alpha by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = if (started) 0.4f else 1f,
+        targetValue = if (shouldAnimate) 0.4f else 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(800),
             repeatMode = RepeatMode.Reverse
@@ -422,7 +437,6 @@ fun EventStatus(event: EventEntity) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
         Box(
             modifier = Modifier
                 .size(16.dp)
@@ -431,14 +445,11 @@ fun EventStatus(event: EventEntity) {
                     scaleY = scale
                     this.alpha = alpha
                 }
-                .background(
-                    color = if (started) Color.Green else Color.Red,
-                    shape = CircleShape
-                )
+                .background(color = color, shape = CircleShape)
         )
 
         Text(
-            text = if (started) "Started" else "Ongoing",
+            text = status,
             style = Typography.bodyMedium.copy(color = Color.White)
         )
     }
