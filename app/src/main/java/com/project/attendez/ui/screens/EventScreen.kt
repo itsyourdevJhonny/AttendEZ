@@ -49,7 +49,8 @@ fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
 
     val filteredEvents = (when (selectedTabIndex) {
         0 -> ongoingEvents
-        1 -> pastEvents
+        1 -> upcomingEvents
+        2 -> pastEvents
         else -> events
     }).filter { it.name.contains(searchQuery, ignoreCase = true) }
 
