@@ -13,6 +13,7 @@ import com.project.attendez.data.local.util.AttendanceWithAttendee
 import com.project.attendez.ui.util.BulkImportUtils.parseExcel
 import com.project.attendez.ui.util.ImportPreview
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -63,7 +64,7 @@ class AttendanceViewModel @Inject constructor(
                     isDuplicate = isDuplicate,
                     reason = when {
                         duplicateInFile -> "Duplicate in Excel file"
-                        duplicateInDb -> "Already marked today"
+                        duplicateInDb -> "Already exists"
                         else -> null
                     }
                 )
@@ -99,7 +100,10 @@ class AttendanceViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AttendanceUiState.Loading
             try {
-                val attendees = repository.getAttendance(eventId).first()
+                val now = LocalDateTime.now()
+                val startOfDay = now.toLocalDate().atStartOfDay()
+                val endOfDay = now.toLocalDate().atTime(23, 59, 59)
+                val attendees = repository.getAttendanceByEventAndDate(eventId, startOfDay, endOfDay).first()
                 _uiState.value = AttendanceUiState.Success(attendees)
             } catch (e: Exception) {
                 _uiState.value = AttendanceUiState.Error(
@@ -107,6 +111,15 @@ class AttendanceViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun getAttendanceByEventAndDate(eventId: Long): StateFlow<List<AttendanceEntity>> {
+        val now = LocalDateTime.now()
+        val startOfDay = now.toLocalDate().atStartOfDay()
+        val endOfDay = now.toLocalDate().atTime(23, 59, 59)
+        return repository.getAttendanceByEventAndDate(eventId, startOfDay, endOfDay)
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     }
 
     fun attendance(eventId: Long): StateFlow<List<AttendanceEntity>> =
