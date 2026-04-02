@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.project.attendez.data.local.entity.AttendeeEntity
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDateTime
 
 @Dao
 interface AttendeeDao {
@@ -22,12 +23,27 @@ interface AttendeeDao {
     @Query("SELECT * FROM attendees WHERE studentId = :studentId")
     fun getByStudentId(studentId: String): Flow<AttendeeEntity?>
 
-    @Query("""
+    @Query(
+        """
         SELECT a.* FROM attendees a
         INNER JOIN attendance att ON a.id = att.attendeeId
-        WHERE att.eventId = :eventId
-    """)
+        WHERE att.eventId = :eventId 
+    """
+    )
     fun getByEventId(eventId: Long): Flow<List<AttendeeEntity?>>
+
+    @Query(
+        """
+        SELECT a.* FROM attendees a
+        INNER JOIN attendance att ON a.id = att.attendeeId
+        WHERE att.eventId = :eventId AND date BETWEEN :startOfDay AND :endOfDay
+    """
+    )
+    fun getByEventIdAndDate(
+        eventId: Long,
+        startOfDay: LocalDateTime,
+        endOfDay: LocalDateTime,
+    ): Flow<List<AttendeeEntity?>>
 
     @Query("SELECT * FROM attendees WHERE studentId = :studentId")
     suspend fun getByStudentIdOnce(studentId: String): AttendeeEntity?
