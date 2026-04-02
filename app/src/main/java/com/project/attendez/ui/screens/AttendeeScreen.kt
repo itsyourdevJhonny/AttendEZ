@@ -59,13 +59,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.project.attendez.R
 import com.project.attendez.data.local.entity.AttendanceEntity
@@ -108,7 +111,7 @@ fun AttendeeScreen(
     val attendanceViewModel = hiltViewModel<AttendanceViewModel>()
 
     val attendance by remember(eventId) {
-        attendanceViewModel.attendance(eventId)
+        attendanceViewModel.getAttendanceByEventAndDate(eventId)
     }.collectAsState()
 
     Box {
@@ -190,22 +193,35 @@ fun AttendeeContent(
         val today = LocalDate.now()
         val hasAttendanceToday = event?.lastAttendanceDate == today
 
+        val eventColor = Color(event!!.color.toColorInt())
+
         Box(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White)
         ) {
             Column {
-                Header()
+                Column(
+                    modifier = Modifier.background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                eventColor.copy(alpha = 0.2f),
+                                eventColor.copy(alpha = 0.5f),
+                                eventColor.copy(alpha = 0.7f)
+                            )
+                        )
+                    )
+                ) {
+                    Header()
 
-                EventCard(eventId, eventViewModel)
+                    EventCard(eventId, eventViewModel)
 
-                Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(16.dp))
 
-                ActionBars(onExisting = onExisting, onAdd = onAdd)
+                    ActionBars(onExisting = onExisting, onAdd = onAdd)
 
-                Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(20.dp))
+                }
 
                 HorizontalDivider(thickness = 0.5.dp, modifier = Modifier.padding(bottom = 8.dp))
 
@@ -347,17 +363,27 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
     }.collectAsState(initial = null)
 
     event?.let {
+        val eventColor = Color(event!!.color.toColorInt())
+        val textColor = if (eventColor.copy(alpha = 0.6f).luminance() < 0.5f) Color.White else Color.Black
+
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .animateContentSize(),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(6.dp)
+            shape = RoundedCornerShape(20.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .background(BackgroundGradient)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                eventColor,
+                                eventColor.copy(alpha = 0.6f)
+                            )
+                        ),
+                        shape = RoundedCornerShape(20.dp)
+                    )
                     .fillMaxWidth()
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -388,7 +414,7 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
                     Text(
                         text = "${it.startDate}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.Black
+                        color = textColor
                     )
                 }
             }
@@ -531,12 +557,12 @@ private fun ActionBars(onExisting: () -> Unit, onAdd: () -> Unit) {
     ) {
         OutlinedButton(
             onClick = onExisting,
-            border = BorderStroke(width = 1.dp, color = BluePrimary),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
+            border = BorderStroke(width = 0.5.dp, color = Color.White),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
             modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(14.dp)
         ) {
-            Text("Use Existing")
+            Text(text = "Use Existing")
         }
 
         Button(
@@ -554,7 +580,7 @@ private fun ActionBars(onExisting: () -> Unit, onAdd: () -> Unit) {
                 modifier = Modifier.size(24.dp)
             )
             Spacer(Modifier.width(6.dp))
-            Text("Add New")
+            Text(text = "Add New")
         }
     }
 }
