@@ -25,4 +25,7 @@ interface EventDao {
 
     @Update
     suspend fun update(event: EventEntity)
+
+    @Query("SELECT * FROM events ORDER BY startDate DESC")
+    suspend fun getEventsOnce(): List<EventEntity>
 }
