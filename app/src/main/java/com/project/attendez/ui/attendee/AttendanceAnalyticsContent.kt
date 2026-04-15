@@ -15,25 +15,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.util.DailyAttendanceRaw
 import com.project.attendez.ui.theme.Typography
+import java.time.LocalDate
 
 data class DailyAttendanceUI(
     val dayLabel: String, // "Day 1"
+    val date: LocalDate,
     val total: Int,
     val present: Int,
     val absent: Int,
@@ -153,7 +152,7 @@ fun AnalyticsBar(
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(animatedProgress) // ✅ animated width
+                    .fillMaxWidth(animatedProgress)
                     .fillMaxHeight()
                     .background(color, RoundedCornerShape(50))
             )
@@ -175,6 +174,8 @@ fun mapToDailyUI(data: List<DailyAttendanceRaw>): List<DailyAttendanceUI> {
     val grouped = data.groupBy { it.day }
 
     return grouped.entries.mapIndexed { index, entry ->
+        val date = LocalDate.parse(entry.key)
+
         val counts = entry.value.associate { it.status to it.count }
 
         val present = counts[AttendanceStatus.PRESENT] ?: 0
@@ -183,6 +184,7 @@ fun mapToDailyUI(data: List<DailyAttendanceRaw>): List<DailyAttendanceUI> {
 
         DailyAttendanceUI(
             dayLabel = "Day ${index + 1}",
+            date = date,
             total = present + absent + excuse,
             present = present,
             absent = absent,
