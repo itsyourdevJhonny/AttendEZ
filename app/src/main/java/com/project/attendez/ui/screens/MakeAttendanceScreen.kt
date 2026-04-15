@@ -5,6 +5,7 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -47,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -61,6 +65,7 @@ import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.ui.attendance.ImportPreviewDialog
 import com.project.attendez.ui.attendee.AddAttendeeDialog
+import com.project.attendez.ui.attendee.ExistingAttendeeDialog
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.viewmodel.AttendanceViewModel
 import com.project.attendez.viewmodel.AttendeeViewModel
@@ -84,6 +89,10 @@ fun MakeAttendanceScreen(
     val attendanceViewModel = hiltViewModel<AttendanceViewModel>()
 
     val previewList by attendanceViewModel.previewList.collectAsState()
+
+    val attendance by remember(eventId) {
+        attendanceViewModel.getAttendanceByEventAndDate(eventId)
+    }.collectAsState()
 
     val attendees by attendeeViewModel.getAttendeesByEventIdAndDate(eventId)
         .collectAsState(initial = emptyList())
@@ -118,6 +127,7 @@ fun MakeAttendanceScreen(
 
     var value by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
+    var showExistingDialog by remember { mutableStateOf(false) }
 
     var sortExpanded by remember { mutableStateOf(false) }
     var filterExpanded by remember { mutableStateOf(false) }
@@ -146,7 +156,16 @@ fun MakeAttendanceScreen(
                         onShowDialog = { showAddDialog = it }
                     )
 
-                    ImportBulkButton(launcher)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ImportBulkButton(launcher)
+                        UseExistingButton { showExistingDialog = true }
+                    }
 
                     HorizontalDivider(color = Color.White, thickness = 0.5.dp)
 
@@ -193,12 +212,27 @@ fun MakeAttendanceScreen(
                 onCancel = { attendanceViewModel.clearPreview() }
             )
         }
+
+        if (showExistingDialog) {
+            ExistingAttendeeDialog(eventId, attendance) { showExistingDialog = false }
+        }
     }
 }
 
 @Composable
+private fun UseExistingButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        border = BorderStroke(width = 0.5.dp, color = Color.White),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp),
+        content = { Text(text = "Use Existing") }
+    )
+}
+
+@Composable
 private fun ImportBulkButton(launcher: ManagedActivityResultLauncher<Array<String>, Uri?>) {
-    TextButton(
+    OutlinedButton(
         onClick = {
             launcher.launch(
                 arrayOf(
@@ -206,7 +240,10 @@ private fun ImportBulkButton(launcher: ManagedActivityResultLauncher<Array<Strin
                 )
             )
         },
-        modifier = Modifier.padding(vertical = 16.dp)
+        border = BorderStroke(width = 0.5.dp, color = Color.White),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+        shape = RoundedCornerShape(14.dp)
+//        modifier = Modifier.padding(vertical = 16.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.excel),
