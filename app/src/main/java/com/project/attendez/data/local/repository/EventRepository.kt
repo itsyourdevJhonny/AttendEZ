@@ -17,4 +17,6 @@ class EventRepository @Inject constructor(
     suspend fun delete(event: EventEntity) = dao.delete(event)
 
     suspend fun update(event: EventEntity) = dao.update(event)
+
+    suspend fun getEventsOnce(): List<EventEntity> = dao.getEventsOnce()
 }
