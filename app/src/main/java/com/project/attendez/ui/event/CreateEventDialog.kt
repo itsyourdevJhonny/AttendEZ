@@ -196,7 +196,6 @@ fun CreateEventDialog(
                     showEndPicker = true
                 }
 
-                // SHOW TOTAL DAYS
                 val totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1
 
                 Text(
