@@ -78,6 +78,7 @@ fun AppNavigation() {
                 eventId,
                 onAttendance = { eventId, attendeeId -> navController.navigate(Routes.Attendance.route + "/$eventId/$attendeeId") },
                 onMakeAttendance = { navController.navigate(Routes.MakeAttendance.route + "/$eventId") },
+                onViewHistory = { navController.navigate(Routes.History.route) },
                 onBack = { navController.popBackStack() }
             )
         }
