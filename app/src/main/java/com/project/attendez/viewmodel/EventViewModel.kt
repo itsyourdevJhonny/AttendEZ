@@ -3,18 +3,24 @@ package com.project.attendez.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.EventEntity
+import com.project.attendez.data.local.repository.AttendanceRepository
 import com.project.attendez.data.local.repository.EventRepository
+import com.project.attendez.ui.attendee.mapToDailyUI
+import com.project.attendez.ui.history.EventHistoryUI
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
 class EventViewModel @Inject constructor(
-    private val repository: EventRepository
+    private val repository: EventRepository,
+    private val attendanceRepository: AttendanceRepository
 ) : ViewModel() {
 
     private val _events = MutableStateFlow<List<EventEntity>>(emptyList())
@@ -53,5 +59,21 @@ class EventViewModel @Inject constructor(
 
     fun updateEvent(event: EventEntity) {
         viewModelScope.launch { repository.update(event) }
+    }
+
+    fun getEventHistory(): Flow<List<EventHistoryUI>> = flow {
+        val events = repository.getEventsOnce()
+
+        val result = events.map { event ->
+            val raw = attendanceRepository.getDailyAttendanceSummary(event.id)
+            val mapped = mapToDailyUI(raw)
+
+            EventHistoryUI(
+                event = event,
+                days = mapped
+            )
+        }
+
+        emit(result)
     }
 }
