@@ -8,6 +8,7 @@ import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.data.local.entity.AttendeeEntity
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.util.AttendanceWithAttendee
+import com.project.attendez.data.local.util.AttendanceWithAttendeeRaw
 import com.project.attendez.data.local.util.DailyAttendanceRaw
 import com.project.attendez.viewmodel.DailyStats
 import kotlinx.coroutines.flow.Flow
@@ -153,6 +154,12 @@ class AttendanceRepository @Inject constructor(
     ): List<DailyAttendanceRaw> {
         return attendanceDao.getDailyAttendanceSummary(eventId)
     }
+
+    suspend fun getAttendanceWithAttendeesByDate(
+        eventId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime
+    ): List<AttendanceWithAttendeeRaw> = attendanceDao.getAttendanceWithAttendeesByDate(eventId, start, end)
 }
 
 sealed class AddAttendeeResult {
