@@ -34,12 +34,6 @@ class AttendanceViewModel @Inject constructor(
     private val _previewList = MutableStateFlow<List<ImportPreview>>(emptyList())
     val previewList: StateFlow<List<ImportPreview>> = _previewList
 
-    /*fun loadPreview(context: Context, uri: Uri) {
-        viewModelScope.launch {
-            _previewList.value = parseExcel(context, uri)
-        }
-    }*/
-
     fun loadPreview(context: Context, uri: Uri, eventId: Long) {
         viewModelScope.launch {
             val rawList = parseExcel(context, uri)
@@ -190,6 +184,12 @@ class AttendanceViewModel @Inject constructor(
 
     suspend fun getDailyAttendanceSummary(eventId: Long) =
         repository.getDailyAttendanceSummary(eventId)
+
+    suspend fun getAttendanceWithAttendeesByDate(
+        eventId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime,
+    ) = repository.getAttendanceWithAttendeesByDate(eventId, start, end)
 }
 
 data class DailyStats(
