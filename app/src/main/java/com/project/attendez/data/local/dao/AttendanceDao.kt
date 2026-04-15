@@ -132,5 +132,18 @@ interface AttendanceDao {
     suspend fun getDailyAttendanceSummary(
         eventId: Long
     ): List<DailyAttendanceRaw>
+
+    @Query("""
+    SELECT * FROM attendance
+    INNER JOIN attendees 
+    ON attendance.attendeeId = attendees.id
+    WHERE attendance.eventId = :eventId 
+    AND attendance.date BETWEEN :start AND :end
+""")
+    suspend fun getAttendanceWithAttendeesByDate(
+        eventId: Long,
+        start: LocalDateTime,
+        end: LocalDateTime
+    ): List<AttendanceWithAttendeeRaw>
 }
 
