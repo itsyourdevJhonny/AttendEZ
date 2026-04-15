@@ -1,11 +1,13 @@
 package com.project.attendez.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,8 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,46 +26,96 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.project.attendez.ui.history.HistoryCard
-import com.project.attendez.data.local.util.Summary
+import com.project.attendez.ui.attendee.AnalyticsBar
+import com.project.attendez.ui.history.EventDetailDialog
+import com.project.attendez.ui.history.EventHistoryUI
 import com.project.attendez.ui.theme.BluePrimary
-import com.project.attendez.viewmodel.HistoryUiState
+import com.project.attendez.ui.theme.Typography
+import com.project.attendez.viewmodel.EventViewModel
 import com.project.attendez.viewmodel.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(onBack: () -> Unit) {
     val viewModel = hiltViewModel<HistoryViewModel>()
-    val uiState by viewModel.uiState.collectAsState()
+    val eventViewModel = hiltViewModel<EventViewModel>()
+
+    val histories by eventViewModel.getEventHistory().collectAsState(initial = emptyList())
 
     LaunchedEffect(Unit) {
         viewModel.loadHistory()
     }
 
+    var showDialog by remember { mutableStateOf(false) }
+    var selectedHistory by remember { mutableStateOf<EventHistoryUI?>(null) }
+
     Scaffold(
         containerColor = Color.White,
         topBar = { Header(onBack) }
     ) { padding ->
-        when (uiState) {
-            HistoryUiState.Loading -> LoadingState(padding)
-
-            is HistoryUiState.Error -> {
-                ErrorState(
-                    padding,
-                    message = (uiState as HistoryUiState.Error).message,
-                    onRetry = { viewModel.loadHistory() }
-                )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color(0xFFF5F6FA)),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            items(histories) { history ->
+                EventHistoryCard(history) { showDialog = true; selectedHistory = it }
             }
+        }
+    }
 
-            is HistoryUiState.Success -> {
-                HistoryList(padding, records = (uiState as HistoryUiState.Success).records)
-            }
+    if (showDialog) {
+        selectedHistory?.let {
+            EventDetailDialog(it) { showDialog = false }
+        }
+    }
+}
+
+@Composable
+private fun EventHistoryCard(history: EventHistoryUI, onClick: (EventHistoryUI) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(8.dp, RoundedCornerShape(20.dp))
+            .background(Color.White, RoundedCornerShape(20.dp))
+            .clickable { onClick(history) }
+            .padding(16.dp)
+    ) {
+
+        Text(
+            text = history.event.name,
+            style = Typography.titleLarge,
+            color = Color.Black
+        )
+
+        Text(
+            text = "${history.days.size} Days Recorded",
+            style = Typography.bodySmall,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        history.days.take(3).forEach { day ->
+            AnalyticsBar(
+                label = day.dayLabel,
+                value = day.present,
+                total = day.total,
+                color = Color(0xFF4CAF50),
+                onClick = {}
+            )
         }
     }
 }
@@ -87,68 +137,6 @@ private fun Header(onBack: () -> Unit) {
         ),
         modifier = Modifier.clip(RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp))
     )
-}
-
-@Composable
-private fun HistoryList(padding: PaddingValues, records: List<Summary>) {
-    if (records.isEmpty()) {
-        EmptyHistoryState(padding)
-        return
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .padding(padding)
-            .fillMaxSize(),
-        contentPadding = PaddingValues(8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(records, key = { it.eventId }) { summary ->
-            HistoryCard(summary)
-        }
-    }
-}
-
-@Composable
-private fun LoadingState(padding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .padding(padding)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun ErrorState(padding: PaddingValues, message: String, onRetry: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .padding(padding)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(message)
-            Spacer(Modifier.height(12.dp))
-            Button(onClick = onRetry) {
-                Text("Retry")
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyHistoryState(padding: PaddingValues) {
-    Box(
-        modifier = Modifier
-            .padding(padding)
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text("No attendance history yet.")
-    }
 }
 
 
