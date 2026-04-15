@@ -105,6 +105,7 @@ fun AttendeeScreen(
     eventId: Long,
     onAttendance: (Long, Long) -> Unit,
     onMakeAttendance: () -> Unit,
+    onViewHistory: () -> Unit,
     onBack: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -130,7 +131,8 @@ fun AttendeeScreen(
                 onExisting = { showExistingDialog = true },
                 onAdd = { showAddDialog = true },
                 onSearch = { showSearchDialog = true },
-                onMakeAttendance
+                onMakeAttendance,
+                onViewHistory
             )
         }
 
@@ -179,6 +181,7 @@ fun AttendeeContent(
     onAdd: () -> Unit,
     onSearch: () -> Unit,
     onMakeAttendance: () -> Unit,
+    onViewHistory: () -> Unit
 ) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
@@ -197,6 +200,8 @@ fun AttendeeContent(
         val hasAttendanceToday = event?.lastAttendanceDate == today
 
         val eventColor = Color(event!!.color.toColorInt())
+        val textColor =
+            if (eventColor.copy(alpha = 0.6f).luminance() < 0.5f) Color.White else Color.Black
 
         val isEventEnded = event!!.isEnded(today)
 
@@ -219,11 +224,41 @@ fun AttendeeContent(
                 ) {
                     Header()
 
-                    EventCard(eventId, eventViewModel)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        thickness = 0.5.dp,
+                        color = Color.Black
+                    )
 
-                    Spacer(Modifier.height(16.dp))
+                    EventCard(eventId, isEventEnded, eventViewModel)
 
-                    ActionBars(onExisting = onExisting, onAdd = onAdd)
+                    if (!isEventEnded) {
+                        Spacer(Modifier.height(16.dp))
+                        ActionBars(onExisting = onExisting, onAdd = onAdd)
+                    } else {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(top = 16.dp),
+                            thickness = 0.5.dp,
+                            color = textColor
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = onViewHistory,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = eventColor
+                            )
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.history),
+                                contentDescription = null,
+                                modifier = Modifier.size(32.dp)
+                            )
+
+                            Text(text = " View Full Attendance History")
+                        }
+                    }
 
                     Spacer(Modifier.height(20.dp))
                 }
@@ -309,7 +344,28 @@ fun AttendeeContent(
                             data = attendanceViewModel.getDailyAttendanceSummary(eventId)
                         }
 
-                        AttendanceAnalyticsContent(mapToDailyUI(data)) { _, _ -> }
+                        if (!data.isEmpty()) {
+                            AttendanceAnalyticsContent(mapToDailyUI(data)) { _, _ -> }
+                        } else {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                EmptyAttendance(
+                                    label = "No attendance records found.",
+                                    isFullSize = false
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "No attendance record for today.", color = Color.DarkGray)
+                        }
                     }
                 }
             }
@@ -370,19 +426,23 @@ private fun Header() {
     Text(
         text = "Event Attendance",
         style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
+        fontWeight = FontWeight.Black,
         color = Color.Black,
         modifier = Modifier.padding(16.dp)
     )
 }
 
 @Composable
-private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
+private fun EventCard(eventId: Long, isEnded: Boolean, eventViewModel: EventViewModel) {
     val event by remember(eventId) {
         eventViewModel.getEventById(eventId)
     }.collectAsState(initial = null)
 
-    event?.let {
+    event?.let { e ->
+        val completedDays = e.lastAttendanceDate?.let {
+            ChronoUnit.DAYS.between(e.startDate, it).toInt() + 1
+        } ?: 0
+
         val eventColor = Color(event!!.color.toColorInt())
         val textColor =
             if (eventColor.copy(alpha = 0.6f).luminance() < 0.5f) Color.White else Color.Black
@@ -410,19 +470,20 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = it.name,
+                    text = e.name,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = it.description,
+                    text = e.description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White
                 )
 
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
@@ -433,9 +494,16 @@ private fun EventCard(eventId: Long, eventViewModel: EventViewModel) {
                     )
 
                     Text(
-                        text = "${it.startDate}",
+                        text = "${e.startDate}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = textColor
+                        color = textColor,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = if (isEnded) "Event Ended" else "Event Started (Day $completedDays)",
+                        color = textColor,
+                        fontWeight = FontWeight.Black
                     )
                 }
             }
@@ -463,13 +531,13 @@ private fun AttendeeHeader(
             .padding(horizontal = 16.dp)
             .fillMaxWidth()
     ) {
-        Text(
-            text = "Attendees ($attendanceSize)",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.animateContentSize()
-        )
+        ) {
+            Text(text = "Attendees ", color = Color.Black)
+            Text(text = "($attendanceSize)", color = Color.Black, fontWeight = FontWeight.Black)
+        }
 
         if (!isEnded) {
             Row(
@@ -511,8 +579,8 @@ private fun AttendeeHeader(
             val totalDays = ChronoUnit.DAYS.between(event?.startDate, event?.endDate) + 1
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Total Days: ", color = Color.Black)
-                Text(text = "$totalDays", color = Color.Black, fontWeight = FontWeight.Black)
+                Text(text = "Total Days ", color = Color.Black)
+                Text(text = "($totalDays)", color = Color.Black, fontWeight = FontWeight.Black)
             }
         }
     }
