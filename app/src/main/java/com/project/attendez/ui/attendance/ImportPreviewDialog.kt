@@ -25,7 +25,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.project.attendez.data.local.entity.AttendanceStatus
 import com.project.attendez.ui.theme.BluePrimary
 import com.project.attendez.ui.theme.BlueSecondary
 import com.project.attendez.ui.theme.Typography
@@ -90,7 +89,7 @@ fun ImportPreviewDialog(
 
                             if (item.isDuplicate) {
                                 Text(text = "⚠ ${item.reason}", color = Color.Red)
-                            } else {
+                            }/* else {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = "Status: ",
@@ -108,7 +107,7 @@ fun ImportPreviewDialog(
                                         fontWeight = FontWeight.Black
                                     )
                                 }
-                            }
+                            }*/
                         }
                     }
                 }
