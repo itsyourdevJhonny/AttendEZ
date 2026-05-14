@@ -12,13 +12,13 @@ import kotlinx.coroutines.flow.Flow
 interface EventDao {
 
     @Insert
-    suspend fun insert(event: EventEntity): Long
+    suspend fun insert(event: EventEntity)
 
     @Query("SELECT * FROM events ORDER BY startDate DESC")
     fun getAll(): Flow<List<EventEntity>>
 
     @Query("SELECT * FROM events WHERE id = :id")
-    fun getById(id: Long): Flow<EventEntity>
+    fun getById(id: String): Flow<EventEntity>
 
     @Delete
     suspend fun delete(event: EventEntity)
@@ -28,4 +28,10 @@ interface EventDao {
 
     @Query("SELECT * FROM events ORDER BY startDate DESC")
     suspend fun getEventsOnce(): List<EventEntity>
+
+    @Query("SELECT * FROM events WHERE synced = 0")
+    suspend fun getUnsynced(): List<EventEntity>
+
+    @Query("SELECT * FROM events WHERE id = :id")
+    suspend fun getByIdOnce(id: String): EventEntity?
 }
