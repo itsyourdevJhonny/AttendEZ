@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.project.attendez.data.local.entity.EventEntity
 import com.project.attendez.data.local.repository.AttendanceRepository
 import com.project.attendez.data.local.repository.EventRepository
+import com.project.attendez.data.remote.sync.SyncManager
 import com.project.attendez.ui.attendee.mapToDailyUI
 import com.project.attendez.ui.history.EventHistoryUI
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class EventViewModel @Inject constructor(
     private val repository: EventRepository,
-    private val attendanceRepository: AttendanceRepository
+    private val attendanceRepository: AttendanceRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val _events = MutableStateFlow<List<EventEntity>>(emptyList())
@@ -43,7 +45,7 @@ class EventViewModel @Inject constructor(
         }
     }
 
-    fun getEventById(id: Long) = repository.getEventById(id)
+    fun getEventById(id: String) = repository.getEventById(id)
 
     fun createEvent(name: String, startDate: LocalDate, endDate: LocalDate, description: String, color: Long) {
         viewModelScope.launch {
@@ -75,5 +77,11 @@ class EventViewModel @Inject constructor(
         }
 
         emit(result)
+    }
+
+    fun syncNow() {
+        viewModelScope.launch {
+            syncManager.syncAll()
+        }
     }
 }
