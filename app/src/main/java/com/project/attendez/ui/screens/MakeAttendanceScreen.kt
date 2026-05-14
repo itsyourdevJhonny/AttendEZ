@@ -80,8 +80,8 @@ enum class SortType {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MakeAttendanceScreen(
-    eventId: Long,
-    onAttendance: (Long, Long) -> Unit,
+    eventId: String,
+    onAttendance: (String, String) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -243,7 +243,6 @@ private fun ImportBulkButton(launcher: ManagedActivityResultLauncher<Array<Strin
         border = BorderStroke(width = 0.5.dp, color = Color.White),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
         shape = RoundedCornerShape(14.dp)
-//        modifier = Modifier.padding(vertical = 16.dp)
     ) {
         Image(
             painter = painterResource(R.drawable.excel),
@@ -306,8 +305,8 @@ fun SortDropDown(
 private fun AttendeeList(
     updatedAttendees: List<AttendeeEntity>?,
     attendanceViewModel: AttendanceViewModel,
-    eventId: Long,
-    onAttendance: (Long, Long) -> Unit,
+    eventId: String,
+    onAttendance: (String, String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
