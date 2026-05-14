@@ -6,6 +6,7 @@ data class ImportPreview(
     val studentId: String?,
     val fullName: String?,
     val course: String?,
+    val section: String?,
     val yearLevel: Int?,
     val status: AttendanceStatus?,
 
