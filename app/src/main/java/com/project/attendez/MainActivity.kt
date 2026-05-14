@@ -1,9 +1,11 @@
 package com.project.attendez
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,6 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -41,6 +44,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -70,9 +74,9 @@ fun AppNavigation() {
 
         composable(
             route = Routes.Attendee.route + "/{eventId}",
-            arguments = listOf(navArgument("eventId") { type = NavType.LongType })
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
 
             AttendeeScreen(
                 eventId,
@@ -86,12 +90,12 @@ fun AppNavigation() {
         composable(
             route = Routes.Attendance.route + "/{eventId}/{attendeeId}",
             arguments = listOf(
-                navArgument("eventId") { type = NavType.LongType },
-                navArgument("attendeeId") { type = NavType.LongType }
+                navArgument("eventId") { type = NavType.StringType },
+                navArgument("attendeeId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
-            val attendeeId = backStackEntry.arguments?.getLong("attendeeId") ?: 0L
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+            val attendeeId = backStackEntry.arguments?.getString("attendeeId") ?: ""
 
             AttendanceScreen(eventId, attendeeId, onBack = { navController.popBackStack() })
         }
@@ -102,9 +106,9 @@ fun AppNavigation() {
 
         composable(
             route = Routes.MakeAttendance.route + "/{eventId}",
-            arguments = listOf(navArgument("eventId") { type = NavType.LongType })
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val eventId = backStackEntry.arguments?.getLong("eventId") ?: 0L
+            val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
 
             MakeAttendanceScreen(
                 eventId,
