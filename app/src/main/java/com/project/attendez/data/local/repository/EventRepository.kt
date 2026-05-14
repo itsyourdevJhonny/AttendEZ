@@ -10,9 +10,9 @@ class EventRepository @Inject constructor(
 ) {
     fun getEvents(): Flow<List<EventEntity>> = dao.getAll()
 
-    fun getEventById(id: Long): Flow<EventEntity> = dao.getById(id)
+    fun getEventById(id: String): Flow<EventEntity> = dao.getById(id)
 
-    suspend fun create(event: EventEntity): Long = dao.insert(event)
+    suspend fun create(event: EventEntity) = dao.insert(event)
 
     suspend fun delete(event: EventEntity) = dao.delete(event)
 
