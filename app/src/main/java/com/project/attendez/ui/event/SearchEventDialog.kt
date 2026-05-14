@@ -43,7 +43,7 @@ fun SearchEventDialog(
     onSearchQueryChange: (String) -> Unit,
     filteredEvents: List<EventEntity>,
     onDismiss: () -> Unit,
-    onEventClick: (Long) -> Unit,
+    onEventClick: (String) -> Unit,
     onEventSelected: (EventEntity) -> Unit,
     onDelete: () -> Unit
 ) {
