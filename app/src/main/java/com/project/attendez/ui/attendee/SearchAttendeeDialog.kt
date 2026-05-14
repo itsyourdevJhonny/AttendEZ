@@ -52,9 +52,9 @@ import com.project.attendez.viewmodel.EventViewModel
 
 @Composable
 fun SearchAttendeeDialog(
-    eventId: Long,
+    eventId: String,
     attendance: List<AttendanceEntity>,
-    onAttendance: (Long, Long) -> Unit,
+    onAttendance: (String, String) -> Unit,
     onDismiss: () -> Unit
 ) {
     BackHandler { onDismiss() }
@@ -89,9 +89,9 @@ private fun Header(onBack: () -> Unit) {
 @Composable
 private fun SearchAttendeeContent(
     paddingValues: PaddingValues,
-    eventId: Long,
+    eventId: String,
     attendance: List<AttendanceEntity>,
-    onAttendance: (Long, Long) -> Unit
+    onAttendance: (String, String) -> Unit
 ) {
     val attendeeViewModel = hiltViewModel<AttendeeViewModel>()
     val attendanceViewModel = hiltViewModel<AttendanceViewModel>()
@@ -185,7 +185,7 @@ private fun SearchAttendeeContent(
 
 private fun sortAttendance(
     attendance: List<AttendanceEntity>,
-    attendees: Map<Long?, AttendeeEntity?>
+    attendees: Map<String?, AttendeeEntity?>
 ) = derivedStateOf {
     attendance.sortedWith(
         comparator = compareByDescending<AttendanceEntity> { it.status == AttendanceStatus.PRESENT }
@@ -197,7 +197,7 @@ private fun sortAttendance(
 private fun filterAttendance(
     searchQuery: String,
     sortedAttendance: List<AttendanceEntity>,
-    attendees: Map<Long?, AttendeeEntity?>
+    attendees: Map<String?, AttendeeEntity?>
 ) = derivedStateOf {
     if (searchQuery.isBlank()) sortedAttendance else sortedAttendance
         .filter { attendance ->
