@@ -28,7 +28,7 @@ import com.project.attendez.viewmodel.EventViewModel
 import java.time.LocalDate
 
 @Composable
-fun EventScreen(onEventClick: (Long) -> Unit, onHistory: () -> Unit) {
+fun EventScreen(onEventClick: (String) -> Unit, onHistory: () -> Unit) {
     val eventViewModel = hiltViewModel<EventViewModel>()
     var showCreateDialog by remember { mutableStateOf(false) }
     var isSearching by remember { mutableStateOf(false) }
