@@ -79,7 +79,7 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExistingAttendeeDialog(
-    eventId: Long,
+    eventId: String,
     attendance: List<AttendanceEntity>,
     onDismiss: () -> Unit
 ) {
@@ -180,7 +180,7 @@ fun ExistingAttendeeDialog(
 private fun Header(
     selectedAttendees: SnapshotStateList<AttendeeEntity?>,
     attendanceViewModel: AttendanceViewModel,
-    eventId: Long,
+    eventId: String,
     context: Context,
     onDismiss: () -> Unit
 ) {
@@ -200,7 +200,7 @@ private fun Header(
                                 attendance = selectedAttendees.map {
                                     AttendanceEntity(
                                         eventId = eventId,
-                                        attendeeId = it?.id ?: 0L,
+                                        attendeeId = it?.id ?: "",
                                         status = AttendanceStatus.PRESENT
                                     )
                                 }
@@ -271,7 +271,7 @@ private fun ColumnScope.AddAllCheckBox(
 
 private fun filterAttendees(
     uiState: ExistingAttendeeUiState,
-    existingIds: Set<Long>,
+    existingIds: Set<String>,
     searchQuery: String
 ): List<AttendeeEntity> {
     return (uiState as ExistingAttendeeUiState.Success).attendees
