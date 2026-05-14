@@ -1,5 +1,7 @@
 package com.project.attendez.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +45,7 @@ import com.project.attendez.ui.theme.Typography
 import com.project.attendez.viewmodel.EventViewModel
 import com.project.attendez.viewmodel.HistoryViewModel
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(onBack: () -> Unit) {
