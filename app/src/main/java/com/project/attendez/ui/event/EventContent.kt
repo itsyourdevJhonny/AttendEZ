@@ -82,7 +82,7 @@ fun EventContent(
     onTabSelected: (Int) -> Unit,
     onEventSelected: (EventEntity) -> Unit,
     onShowSheet: (Boolean) -> Unit,
-    onEventClick: (Long) -> Unit,
+    onEventClick: (String) -> Unit,
     onHistory: () -> Unit,
     onCreate: () -> Unit,
     onSearching: (Boolean) -> Unit,
@@ -341,7 +341,7 @@ private fun Tabs(selectedTabIndex: Int, onTabSelected: (Int) -> Unit) {
 @Composable
 fun LazyItemScope.EventItem(
     event: EventEntity,
-    onEventClick: (Long) -> Unit,
+    onEventClick: (String) -> Unit,
     onOpenSheet: () -> Unit,
 ) {
     val eventColor = Color(event.color.toColorInt())
