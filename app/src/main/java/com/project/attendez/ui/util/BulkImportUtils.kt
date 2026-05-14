@@ -58,6 +58,7 @@ object BulkImportUtils {
                         studentId = getString("studentId"),
                         fullName = getString("fullName"),
                         course = getString("course"),
+                        section = getString("section"),
                         yearLevel = getInt("yearLevel"),
                         status = status
                     )
